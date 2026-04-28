@@ -1,5 +1,5 @@
 {
-  "_comment": "Web browsing tool trace. Multiple browser-tool messages (search, then click, then quote) are produced before the assistant's final reply. Format module v1 collapses the entire trace to a single line under the assistant role ('Searching the web...') per plan section 7.6. The final assistant message is preserved.",
+  "_comment": "Web browsing tool trace. Multiple browser-tool messages (search, then quote) are produced before the assistant's final reply. Format module v1 collapses the entire trace to a single line under the assistant role ('Searching the web...') per plan section 7.6. The final assistant message is preserved.",
   "title": "Look up the moon distance",
   "create_time": 1746316800.0,
   "update_time": 1746316900.0,
