@@ -1,0 +1,61 @@
+{
+  "_comment": "Short Q&A. Plain prose, no markdown structure, no tools. Smallest valid mapping: synthetic root + system + user + assistant + canonical leaf via current_node.",
+  "title": "Greeting",
+  "create_time": 1745798400.123,
+  "update_time": 1745798500.456,
+  "conversation_id": "11111111-1111-4111-8111-111111111111",
+  "current_node": "msg-assistant-1",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-system-1"],
+      "message": null
+    },
+    "msg-system-1": {
+      "id": "msg-system-1",
+      "parent": "root",
+      "children": ["msg-user-1"],
+      "message": {
+        "id": "msg-system-1",
+        "author": { "role": "system", "name": null, "metadata": {} },
+        "create_time": 1745798400.0,
+        "content": { "content_type": "text", "parts": [""] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": { "is_visually_hidden_from_conversation": true },
+        "recipient": "all"
+      }
+    },
+    "msg-user-1": {
+      "id": "msg-user-1",
+      "parent": "msg-system-1",
+      "children": ["msg-assistant-1"],
+      "message": {
+        "id": "msg-user-1",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1745798410.0,
+        "content": { "content_type": "text", "parts": ["Hello, how are you?"] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-1": {
+      "id": "msg-assistant-1",
+      "parent": "msg-user-1",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-1",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1745798420.0,
+        "content": { "content_type": "text", "parts": ["I'm doing well, thanks for asking!"] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}
