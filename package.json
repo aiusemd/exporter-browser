@@ -1,0 +1,31 @@
+{
+  "name": "exporter-browser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser extension that exports ChatGPT/Claude conversations to AIUSE-spec markdown logs.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aiusemd/exporter-browser.git"
+  },
+  "engines": {
+    "node": ">=20.10.0",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "20.16.10",
+    "typescript": "5.6.3",
+    "vitest": "2.1.2"
+  }
+}
