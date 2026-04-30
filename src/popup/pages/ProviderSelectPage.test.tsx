@@ -14,11 +14,11 @@ describe('ProviderSelectPage', () => {
     expect(onSelect).toHaveBeenCalledWith('chatgpt');
   });
 
-  it('renders Claude as disabled with "Coming in v2" badge', () => {
+  it('renders Claude as disabled with "Coming soon" badge', () => {
     const onSelect = vi.fn();
     render(<ProviderSelectPage sessionAuthenticated={null} onSelect={onSelect} />);
 
-    expect(screen.getByText('Coming in v2')).toBeTruthy();
+    expect(screen.getByText('Coming soon')).toBeTruthy();
 
     // Claude is rendered as a non-button div — there is no second button to click.
     const buttons = screen.getAllByRole('button');
