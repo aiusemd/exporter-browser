@@ -31,8 +31,8 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
 
   return (
     <main class="flex h-full flex-col gap-4 p-6">
-      <header class="flex items-center gap-2">
-        <img src={logoUrl} alt="" class="h-5 w-5" />
+      <header class="flex items-center gap-3">
+        <img src={logoUrl} alt="" class="h-10 w-10 shrink-0" />
         <div>
           <h1 class="text-lg font-semibold text-gh-fg-default">Choose a provider</h1>
           <p class="text-sm text-gh-fg-muted">Pick which AI service to export from.</p>
@@ -67,7 +67,7 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
             <span class="text-xs text-gh-fg-muted">Claude</span>
           </div>
           <span class="shrink-0 rounded-full bg-gh-canvas-default px-2 py-0.5 text-xs font-medium text-gh-fg-muted ring-1 ring-inset ring-gh-border-default">
-            Coming in v2
+            Coming soon
           </span>
         </div>
       </div>
