@@ -1,7 +1,14 @@
 import { ChatGPTProvider } from './providers/chatgpt.js';
 import type { ConversationSummary, Provider } from './providers/provider.js';
-import type { PopupRequest, SWResponse, StreamMessage } from './state/messages.js';
-import { parseListPortName } from './state/messages.js';
+import type {
+  ExportPortRequest,
+  ExportProgressMessage,
+  PopupRequest,
+  SWResponse,
+  StreamMessage,
+} from './state/messages.js';
+import { parseExportPortName, parseListPortName } from './state/messages.js';
+import { runExport } from './sw/export.js';
 import type { ProviderName } from './types.js';
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -33,20 +40,54 @@ chrome.runtime.onMessage.addListener((req: PopupRequest, _sender, sendResponse) 
 });
 
 chrome.runtime.onConnect.addListener((port) => {
-  const providerName = parseListPortName(port.name);
-  if (providerName === null) return;
+  const listProvider = parseListPortName(port.name);
+  if (listProvider !== null) {
+    handleListPort(port, listProvider);
+    return;
+  }
+  const exportProvider = parseExportPortName(port.name);
+  if (exportProvider !== null) {
+    handleExportPort(port, exportProvider);
+    return;
+  }
+});
 
+function handleListPort(port: chrome.runtime.Port, providerName: ProviderName): void {
   const provider = providers[providerName];
   if (provider === undefined) {
     safePost(port, { type: 'ERROR', message: `Provider not implemented: ${providerName}` });
     port.disconnect();
     return;
   }
-
   const controller = new AbortController();
   port.onDisconnect.addListener(() => controller.abort());
   void streamList(provider, controller.signal, port);
-});
+}
+
+function handleExportPort(port: chrome.runtime.Port, providerName: ProviderName): void {
+  const provider = providers[providerName];
+  if (provider === undefined) {
+    safeExportPost(port, { type: 'ERROR', message: `Provider not implemented: ${providerName}` });
+    port.disconnect();
+    return;
+  }
+  const controller = new AbortController();
+  port.onDisconnect.addListener(() => controller.abort());
+  // The popup sends the conversation IDs as the first message after connect.
+  // Wait for that envelope, then drive the export. Anything else is ignored.
+  port.onMessage.addListener((msg: ExportPortRequest) => {
+    if (msg.type !== 'START') return;
+    void runExport(provider, msg.ids, port, controller.signal, {
+      downloads: chrome.downloads,
+    }).finally(() => {
+      try {
+        port.disconnect();
+      } catch {
+        // already disconnected
+      }
+    });
+  });
+}
 
 async function handleRequest(req: PopupRequest): Promise<SWResponse> {
   const provider = providers[req.provider];
@@ -103,6 +144,15 @@ function safePost(port: chrome.runtime.Port, msg: StreamMessage): boolean {
     return true;
   } catch {
     // Popup disconnected mid-stream.
+    return false;
+  }
+}
+
+function safeExportPost(port: chrome.runtime.Port, msg: ExportProgressMessage): boolean {
+  try {
+    port.postMessage(msg);
+    return true;
+  } catch {
     return false;
   }
 }
