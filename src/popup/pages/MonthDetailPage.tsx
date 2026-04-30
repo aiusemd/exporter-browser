@@ -1,6 +1,6 @@
 import { useCallback } from 'preact/hooks';
+import { BackButton } from '../components/BackButton.js';
 import { ExportFooter } from '../components/ExportFooter.js';
-import { ChevronLeftIcon } from '../components/Icons.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Spinner } from '../components/Spinner.js';
 import type { MonthBucket } from '../state/months.js';
@@ -38,15 +38,7 @@ export function MonthDetailPage({
       <PageHeader
         leading={
           <>
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Back to all months"
-              class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
-            >
-              <ChevronLeftIcon class="h-4 w-4" />
-              <span>All months</span>
-            </button>
+            <BackButton label="All months" ariaLabel="Back to all months" onClick={onBack} />
             <h1 class="ml-1 flex-1 truncate text-base font-semibold text-gh-fg-default">
               {bucket.label}
             </h1>

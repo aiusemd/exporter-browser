@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ConversationSummary } from '../providers/provider.js';
 import type { ProviderName } from '../types.js';
+import { CenteredHeroPage } from './components/CenteredHeroPage.js';
 import { GearIcon } from './components/Icons.js';
 import { dispatch, streamConversations } from './dispatch.js';
 import { AuthPromptPage } from './pages/AuthPromptPage.js';
@@ -351,9 +352,9 @@ function ListShell({
 
 function LoadingView() {
   return (
-    <main class="flex h-full items-center justify-center p-6">
+    <CenteredHeroPage>
       <p class="text-sm text-gh-fg-muted">Loading…</p>
-    </main>
+    </CenteredHeroPage>
   );
 }
 
