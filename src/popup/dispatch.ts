@@ -109,5 +109,13 @@ function reviveConversation(conv: NormalizedConversation): NormalizedConversatio
 }
 
 function toDate(value: Date | string): Date {
-  return value instanceof Date ? value : new Date(value);
+  if (value instanceof Date) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    // Surface bad data with context instead of silently producing an Invalid
+    // Date that propagates into formatters. The SW message boundary is one of
+    // the few places CLAUDE.md says we should validate.
+    console.warn('[aiuse] dispatch: unparseable Date value crossed SW boundary', value);
+  }
+  return parsed;
 }
