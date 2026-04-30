@@ -20,6 +20,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@crxjs/vite-plugin": "2.4.0",
+    "@playwright/test": "^1.59.1",
     "@preact/preset-vite": "^2.10.5",
     "@testing-library/preact": "^3.2.4",
     "@types/chrome": "^0.1.40",
