@@ -64,11 +64,15 @@ describe('runExport', () => {
   });
 
   it('opens an `export:<provider>` port and posts START with the ids', () => {
-    runExport('chatgpt', ['a', 'b'], {
-      onProgress: vi.fn(),
-      onComplete: vi.fn(),
-      onError: vi.fn(),
-    });
+    runExport(
+      'chatgpt',
+      { ids: ['a', 'b'] },
+      {
+        onProgress: vi.fn(),
+        onComplete: vi.fn(),
+        onError: vi.fn(),
+      },
+    );
 
     expect(port).not.toBeNull();
     if (port === null) throw new Error('port not opened');
@@ -78,7 +82,7 @@ describe('runExport', () => {
 
   it('forwards PROGRESS messages to onProgress', () => {
     const onProgress = vi.fn();
-    runExport('chatgpt', ['a'], { onProgress, onComplete: vi.fn(), onError: vi.fn() });
+    runExport('chatgpt', { ids: ['a'] }, { onProgress, onComplete: vi.fn(), onError: vi.fn() });
     if (port === null) throw new Error('port not opened');
 
     port.emitMessage({ type: 'PROGRESS', done: 1, total: 2, currentTitle: 'Alpha' });
@@ -88,7 +92,7 @@ describe('runExport', () => {
   it('settles on COMPLETE and silences subsequent progress', () => {
     const onProgress = vi.fn();
     const onComplete = vi.fn();
-    runExport('chatgpt', ['a'], { onProgress, onComplete, onError: vi.fn() });
+    runExport('chatgpt', { ids: ['a'] }, { onProgress, onComplete, onError: vi.fn() });
     if (port === null) throw new Error('port not opened');
 
     port.emitMessage({
@@ -110,7 +114,7 @@ describe('runExport', () => {
 
   it('settles on ERROR', () => {
     const onError = vi.fn();
-    runExport('chatgpt', ['a'], { onProgress: vi.fn(), onComplete: vi.fn(), onError });
+    runExport('chatgpt', { ids: ['a'] }, { onProgress: vi.fn(), onComplete: vi.fn(), onError });
     if (port === null) throw new Error('port not opened');
 
     port.emitMessage({ type: 'ERROR', message: 'boom' });
@@ -120,7 +124,7 @@ describe('runExport', () => {
   it('treats a port disconnect without a terminal envelope as silent cancellation', () => {
     const onComplete = vi.fn();
     const onError = vi.fn();
-    runExport('chatgpt', ['a'], { onProgress: vi.fn(), onComplete, onError });
+    runExport('chatgpt', { ids: ['a'] }, { onProgress: vi.fn(), onComplete, onError });
     if (port === null) throw new Error('port not opened');
 
     port.emitDisconnect();
@@ -131,11 +135,15 @@ describe('runExport', () => {
 
   it('cancel() disconnects the port and silences subsequent messages', () => {
     const onProgress = vi.fn();
-    const cancel = runExport('chatgpt', ['a'], {
-      onProgress,
-      onComplete: vi.fn(),
-      onError: vi.fn(),
-    });
+    const cancel = runExport(
+      'chatgpt',
+      { ids: ['a'] },
+      {
+        onProgress,
+        onComplete: vi.fn(),
+        onError: vi.fn(),
+      },
+    );
     if (port === null) throw new Error('port not opened');
 
     cancel();

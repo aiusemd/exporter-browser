@@ -9,8 +9,10 @@ import { ExportProgressPage } from './pages/ExportProgressPage.js';
 import { MonthDetailPage } from './pages/MonthDetailPage.js';
 import { MonthListPage } from './pages/MonthListPage.js';
 import { ProviderSelectPage } from './pages/ProviderSelectPage.js';
+import { SettingsPage } from './pages/SettingsPage.js';
 import { runExport } from './runExport.js';
 import { groupByMonth } from './state/months.js';
+import { type UserSettings, getSettings } from './state/settings.js';
 import { getLastProvider, setLastProvider } from './state/storage.js';
 
 type View =
@@ -24,12 +26,14 @@ type View =
       phase: ExportPhase;
       previousList: Extract<View, { kind: 'list' }>;
     }
+  | { kind: 'settings'; previousList: Extract<View, { kind: 'list' }> }
   | { kind: 'error'; message: string };
 
 export function App() {
   const [view, setView] = useState<View>({ kind: 'loading' });
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [settings, setSettings] = useState<UserSettings>({});
   const cancelStreamRef = useRef<(() => void) | null>(null);
   const cancelExportRef = useRef<(() => void) | null>(null);
 
@@ -97,8 +101,9 @@ export function App() {
     let cancelled = false;
     (async () => {
       try {
-        const last = await getLastProvider();
+        const [last, loaded] = await Promise.all([getLastProvider(), getSettings()]);
         if (cancelled) return;
+        setSettings(loaded);
         if (last === null) {
           setView({ kind: 'select', sessionAuthenticated: null });
           return;
@@ -153,25 +158,29 @@ export function App() {
       previousList,
     });
     cleanupExport();
-    cancelExportRef.current = runExport(previousList.provider, ids, {
-      onProgress: (p) =>
-        setView((prev) =>
-          prev.kind === 'exporting' && prev.phase.kind === 'running'
-            ? { ...prev, phase: { kind: 'running', ...p } }
-            : prev,
-        ),
-      onComplete: ({ filename, failedIds }) =>
-        setView((prev) =>
-          prev.kind === 'exporting'
-            ? { ...prev, phase: { kind: 'complete', filename, failedIds } }
-            : prev,
-        ),
-      onError: (message) =>
-        setView((prev) =>
-          prev.kind === 'exporting' ? { ...prev, phase: { kind: 'error', message } } : prev,
-        ),
-    });
-  }, [view, selectedIds, cleanupExport]);
+    cancelExportRef.current = runExport(
+      previousList.provider,
+      { ids, settings },
+      {
+        onProgress: (p) =>
+          setView((prev) =>
+            prev.kind === 'exporting' && prev.phase.kind === 'running'
+              ? { ...prev, phase: { kind: 'running', ...p } }
+              : prev,
+          ),
+        onComplete: ({ filename, failedIds }) =>
+          setView((prev) =>
+            prev.kind === 'exporting'
+              ? { ...prev, phase: { kind: 'complete', filename, failedIds } }
+              : prev,
+          ),
+        onError: (message) =>
+          setView((prev) =>
+            prev.kind === 'exporting' ? { ...prev, phase: { kind: 'error', message } } : prev,
+          ),
+      },
+    );
+  }, [view, selectedIds, settings, cleanupExport]);
 
   const handleExportCancel = useCallback(() => {
     cleanupExport();
@@ -183,6 +192,15 @@ export function App() {
     setView((prev) => (prev.kind === 'exporting' ? prev.previousList : prev));
     setSelectedIds(new Set());
   }, [cleanupExport]);
+
+  const handleOpenSettings = useCallback(() => {
+    setView((prev) => (prev.kind === 'list' ? { kind: 'settings', previousList: prev } : prev));
+  }, []);
+
+  const handleSettingsClose = useCallback((next: UserSettings) => {
+    setSettings(next);
+    setView((prev) => (prev.kind === 'settings' ? prev.previousList : prev));
+  }, []);
 
   if (view.kind === 'loading') return <LoadingView />;
   if (view.kind === 'error') return <ErrorView message={view.message} />;
@@ -196,6 +214,9 @@ export function App() {
       />
     );
   }
+  if (view.kind === 'settings') {
+    return <SettingsPage initial={settings} onClose={handleSettingsClose} />;
+  }
   if (view.kind === 'list') {
     return (
       <ListShell
@@ -207,6 +228,7 @@ export function App() {
         onBack={handleBack}
         onToggle={handleToggleSelected}
         onExport={handleExport}
+        onOpenSettings={handleOpenSettings}
       />
     );
   }
@@ -227,6 +249,7 @@ interface ListShellProps {
   onBack: () => void;
   onToggle: (id: string) => void;
   onExport: () => void;
+  onOpenSettings: () => void;
 }
 
 function ListShell({
@@ -238,6 +261,7 @@ function ListShell({
   onBack,
   onToggle,
   onExport,
+  onOpenSettings,
 }: ListShellProps) {
   const buckets = useMemo(() => groupByMonth(summaries), [summaries]);
 
@@ -270,6 +294,7 @@ function ListShell({
       selectedIds={selectedIds}
       onOpenMonth={onOpenMonth}
       onExport={onExport}
+      onOpenSettings={onOpenSettings}
     />
   );
 }

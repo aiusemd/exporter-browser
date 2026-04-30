@@ -38,8 +38,20 @@ export function parseListPortName(name: string): ProviderName | null {
   return null;
 }
 
-/** First message the popup sends after opening the export port. */
-export type ExportPortRequest = { type: 'START'; ids: string[] };
+/**
+ * First message the popup sends after opening the export port. The popup
+ * sends along the user's render settings so the SW can apply them without
+ * an extra storage read on its side.
+ *
+ * `extraRedactPatterns` carries regex *sources* (not RegExp objects) so
+ * the message survives JSON serialization across the chrome.runtime port.
+ */
+export type ExportPortRequest = {
+  type: 'START';
+  ids: string[];
+  truncateLimit?: number;
+  extraRedactPatterns?: string[];
+};
 
 /**
  * Messages emitted on the export port (SW → popup). Like the listing port,

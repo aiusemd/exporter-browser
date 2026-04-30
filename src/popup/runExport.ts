@@ -1,6 +1,7 @@
 import type { ExportPortRequest, ExportProgressMessage } from '../state/messages.js';
 import { exportPortName } from '../state/messages.js';
 import type { ProviderName } from '../types.js';
+import type { UserSettings } from './state/settings.js';
 
 export interface ExportProgress {
   done: number;
@@ -20,6 +21,12 @@ export interface ExportHandlers {
   onError: (message: string) => void;
 }
 
+export interface ExportInputs {
+  ids: ReadonlyArray<string>;
+  /** User-render settings forwarded to the SW so they apply to this run. */
+  settings?: UserSettings;
+}
+
 /**
  * Open a streaming connection to the SW that drives a ZIP export of the
  * given conversation IDs. Returns a `cancel` that disconnects the port —
@@ -30,9 +37,10 @@ export interface ExportHandlers {
  */
 export function runExport(
   provider: ProviderName,
-  ids: ReadonlyArray<string>,
+  inputs: ExportInputs,
   handlers: ExportHandlers,
 ): () => void {
+  const { ids, settings } = inputs;
   const port = chrome.runtime.connect({ name: exportPortName(provider) });
   let settled = false;
 
@@ -69,8 +77,12 @@ export function runExport(
     settle(() => {});
   });
 
-  // Send the IDs as the first message after connect — the SW waits for this.
+  // Send the IDs + settings as the first message after connect.
   const startMsg: ExportPortRequest = { type: 'START', ids: [...ids] };
+  if (settings?.truncateLimit !== undefined) startMsg.truncateLimit = settings.truncateLimit;
+  if (settings?.extraRedactPatterns !== undefined && settings.extraRedactPatterns.length > 0) {
+    startMsg.extraRedactPatterns = [...settings.extraRedactPatterns];
+  }
   port.postMessage(startMsg);
 
   return () => {
