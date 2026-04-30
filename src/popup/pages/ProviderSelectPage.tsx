@@ -1,5 +1,7 @@
 import { useCallback } from 'preact/hooks';
+import anthropicLogoUrl from '../../assets/anthropic.svg?url';
 import logoUrl from '../../assets/logo.svg?url';
+import openaiLogoUrl from '../../assets/openai.svg?url';
 import type { ProviderName } from '../../types.js';
 
 export interface ProviderSelectPageProps {
@@ -41,30 +43,30 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
         <button
           type="button"
           onClick={handleSelectChatGPT}
-          class="flex items-center justify-between rounded-lg border border-gh-border-default bg-gh-canvas-default p-4 text-left shadow-sm transition hover:border-gh-neutral-emphasis hover:shadow"
+          class="flex items-center gap-4 rounded-lg border border-gh-border-default bg-gh-canvas-default p-4 text-left shadow-sm transition hover:border-gh-neutral-emphasis hover:shadow"
         >
-          <div class="flex flex-col">
-            <span class="text-base font-medium text-gh-fg-default">ChatGPT</span>
-            <span class="text-xs text-gh-fg-muted">chatgpt.com</span>
+          <img src={openaiLogoUrl} alt="" class="h-8 w-8 shrink-0" />
+          <div class="flex min-w-0 flex-1 flex-col">
+            <span class="text-base font-medium text-gh-fg-default">OpenAI</span>
+            <span class="text-xs text-gh-fg-muted">ChatGPT</span>
           </div>
-          <div class="flex items-center gap-2">
-            <span
-              aria-label={statusLabel(sessionAuthenticated)}
-              title={statusLabel(sessionAuthenticated)}
-              class={`h-2.5 w-2.5 rounded-full ${statusDotClass(sessionAuthenticated)}`}
-            />
-          </div>
+          <span
+            aria-label={statusLabel(sessionAuthenticated)}
+            title={statusLabel(sessionAuthenticated)}
+            class={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDotClass(sessionAuthenticated)}`}
+          />
         </button>
 
         <div
           aria-disabled="true"
-          class="flex cursor-not-allowed items-center justify-between rounded-lg border border-gh-border-default bg-gh-canvas-subtle p-4 opacity-60"
+          class="flex cursor-not-allowed items-center gap-4 rounded-lg border border-gh-border-default bg-gh-canvas-subtle p-4 opacity-60"
         >
-          <div class="flex flex-col">
-            <span class="text-base font-medium text-gh-fg-default">Claude</span>
-            <span class="text-xs text-gh-fg-muted">claude.ai</span>
+          <img src={anthropicLogoUrl} alt="" class="h-8 w-8 shrink-0" />
+          <div class="flex min-w-0 flex-1 flex-col">
+            <span class="text-base font-medium text-gh-fg-default">Anthropic</span>
+            <span class="text-xs text-gh-fg-muted">Claude</span>
           </div>
-          <span class="rounded-full bg-gh-canvas-default px-2 py-0.5 text-xs font-medium text-gh-fg-muted ring-1 ring-inset ring-gh-border-default">
+          <span class="shrink-0 rounded-full bg-gh-canvas-default px-2 py-0.5 text-xs font-medium text-gh-fg-muted ring-1 ring-inset ring-gh-border-default">
             Coming in v2
           </span>
         </div>
