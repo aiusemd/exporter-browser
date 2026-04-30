@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ConversationSummary } from '../providers/provider.js';
 import type { ProviderName } from '../types.js';
+import { GearIcon } from './components/Icons.js';
 import { dispatch, streamConversations } from './dispatch.js';
 import { AuthPromptPage } from './pages/AuthPromptPage.js';
 import { EmptyConversationsPage } from './pages/EmptyConversationsPage.js';
@@ -9,27 +10,37 @@ import { ExportProgressPage } from './pages/ExportProgressPage.js';
 import { MonthDetailPage } from './pages/MonthDetailPage.js';
 import { MonthListPage } from './pages/MonthListPage.js';
 import { ProviderSelectPage } from './pages/ProviderSelectPage.js';
+import { SettingsPage } from './pages/SettingsPage.js';
 import { runExport } from './runExport.js';
 import { groupByMonth } from './state/months.js';
+import { type UserSettings, getSettings } from './state/settings.js';
 import { getLastProvider, setLastProvider } from './state/storage.js';
 
-type View =
+type SettingsBaseView =
   | { kind: 'select'; sessionAuthenticated: boolean | null }
-  | { kind: 'loading' }
   | { kind: 'auth-prompt' }
   | { kind: 'list'; provider: ProviderName; summaries: ConversationSummary[]; streamDone: boolean }
   | {
       kind: 'exporting';
       provider: ProviderName;
       phase: ExportPhase;
-      previousList: Extract<View, { kind: 'list' }>;
+      previousList: Extract<SettingsBaseView, { kind: 'list' }>;
     }
   | { kind: 'error'; message: string };
+
+type View =
+  | SettingsBaseView
+  | { kind: 'loading' }
+  // Settings can be opened from any non-loading, non-settings view; the
+  // previous view is captured so the gear button is reachable everywhere
+  // and we always restore the user to where they came from.
+  | { kind: 'settings'; previousView: SettingsBaseView };
 
 export function App() {
   const [view, setView] = useState<View>({ kind: 'loading' });
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [settings, setSettings] = useState<UserSettings>({});
   const cancelStreamRef = useRef<(() => void) | null>(null);
   const cancelExportRef = useRef<(() => void) | null>(null);
 
@@ -97,8 +108,9 @@ export function App() {
     let cancelled = false;
     (async () => {
       try {
-        const last = await getLastProvider();
+        const [last, loaded] = await Promise.all([getLastProvider(), getSettings()]);
         if (cancelled) return;
+        setSettings(loaded);
         if (last === null) {
           setView({ kind: 'select', sessionAuthenticated: null });
           return;
@@ -153,25 +165,29 @@ export function App() {
       previousList,
     });
     cleanupExport();
-    cancelExportRef.current = runExport(previousList.provider, ids, {
-      onProgress: (p) =>
-        setView((prev) =>
-          prev.kind === 'exporting' && prev.phase.kind === 'running'
-            ? { ...prev, phase: { kind: 'running', ...p } }
-            : prev,
-        ),
-      onComplete: ({ filename, failedIds }) =>
-        setView((prev) =>
-          prev.kind === 'exporting'
-            ? { ...prev, phase: { kind: 'complete', filename, failedIds } }
-            : prev,
-        ),
-      onError: (message) =>
-        setView((prev) =>
-          prev.kind === 'exporting' ? { ...prev, phase: { kind: 'error', message } } : prev,
-        ),
-    });
-  }, [view, selectedIds, cleanupExport]);
+    cancelExportRef.current = runExport(
+      previousList.provider,
+      { ids, settings },
+      {
+        onProgress: (p) =>
+          setView((prev) =>
+            prev.kind === 'exporting' && prev.phase.kind === 'running'
+              ? { ...prev, phase: { kind: 'running', ...p } }
+              : prev,
+          ),
+        onComplete: ({ filename, failedIds }) =>
+          setView((prev) =>
+            prev.kind === 'exporting'
+              ? { ...prev, phase: { kind: 'complete', filename, failedIds } }
+              : prev,
+          ),
+        onError: (message) =>
+          setView((prev) =>
+            prev.kind === 'exporting' ? { ...prev, phase: { kind: 'error', message } } : prev,
+          ),
+      },
+    );
+  }, [view, selectedIds, settings, cleanupExport]);
 
   const handleExportCancel = useCallback(() => {
     cleanupExport();
@@ -184,37 +200,96 @@ export function App() {
     setSelectedIds(new Set());
   }, [cleanupExport]);
 
+  const handleOpenSettings = useCallback(() => {
+    setView((prev) => {
+      // Already on settings, or in the transient loading state where the
+      // previous view isn't fully resolved yet — leave the view unchanged.
+      if (prev.kind === 'settings' || prev.kind === 'loading') return prev;
+      return { kind: 'settings', previousView: prev };
+    });
+  }, []);
+
+  const handleSettingsClose = useCallback((next: UserSettings) => {
+    setSettings(next);
+    setView((prev) => (prev.kind === 'settings' ? prev.previousView : prev));
+  }, []);
+
+  // Settings is reachable from any non-loading, non-settings view via this
+  // floating button. Rendered as a sibling of the page so it overlays sticky
+  // headers and centred empty/error layouts alike.
+  const settingsButton =
+    view.kind === 'loading' || view.kind === 'settings' ? null : (
+      <SettingsButton onClick={handleOpenSettings} />
+    );
+
   if (view.kind === 'loading') return <LoadingView />;
-  if (view.kind === 'error') return <ErrorView message={view.message} />;
-  if (view.kind === 'auth-prompt') return <AuthPromptPage />;
+  if (view.kind === 'error')
+    return (
+      <>
+        <ErrorView message={view.message} />
+        {settingsButton}
+      </>
+    );
+  if (view.kind === 'auth-prompt')
+    return (
+      <>
+        <AuthPromptPage />
+        {settingsButton}
+      </>
+    );
   if (view.kind === 'exporting') {
     return (
-      <ExportProgressPage
-        phase={view.phase}
-        onCancel={handleExportCancel}
-        onDismiss={handleExportDismiss}
-      />
+      <>
+        <ExportProgressPage
+          phase={view.phase}
+          onCancel={handleExportCancel}
+          onDismiss={handleExportDismiss}
+        />
+        {settingsButton}
+      </>
     );
+  }
+  if (view.kind === 'settings') {
+    return <SettingsPage initial={settings} onClose={handleSettingsClose} />;
   }
   if (view.kind === 'list') {
     return (
-      <ListShell
-        summaries={view.summaries}
-        streamDone={view.streamDone}
-        openMonth={openMonth}
-        selectedIds={selectedIds}
-        onOpenMonth={handleOpenMonth}
-        onBack={handleBack}
-        onToggle={handleToggleSelected}
-        onExport={handleExport}
-      />
+      <>
+        <ListShell
+          summaries={view.summaries}
+          streamDone={view.streamDone}
+          openMonth={openMonth}
+          selectedIds={selectedIds}
+          onOpenMonth={handleOpenMonth}
+          onBack={handleBack}
+          onToggle={handleToggleSelected}
+          onExport={handleExport}
+        />
+        {settingsButton}
+      </>
     );
   }
   return (
-    <ProviderSelectPage
-      sessionAuthenticated={view.sessionAuthenticated}
-      onSelect={handleSelectProvider}
-    />
+    <>
+      <ProviderSelectPage
+        sessionAuthenticated={view.sessionAuthenticated}
+        onSelect={handleSelectProvider}
+      />
+      {settingsButton}
+    </>
+  );
+}
+
+function SettingsButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Settings"
+      class="fixed right-2.5 top-2.5 z-20 rounded-md p-1.5 text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default focus:outline-none focus:ring-2 focus:ring-gh-accent-emphasis"
+    >
+      <GearIcon class="h-4 w-4" />
+    </button>
   );
 }
 

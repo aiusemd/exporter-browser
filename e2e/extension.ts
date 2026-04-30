@@ -128,6 +128,58 @@ export async function installDownloadsCapture(serviceWorker: ServiceWorker): Pro
   });
 }
 
+/**
+ * Override `chrome.notifications.create` inside the service worker so the
+ * test can assert which notifications fired without depending on the real
+ * OS notification UI. Stashes each call as
+ * `{ title, message, type, priority }` on `globalThis.__capturedNotifications`.
+ *
+ * Like `installDownloadsCapture`, the override doesn't survive a SW restart
+ * — call right before the action that should trigger the notification.
+ */
+export async function installNotificationsCapture(serviceWorker: ServiceWorker): Promise<void> {
+  await serviceWorker.evaluate(() => {
+    const g = globalThis as unknown as {
+      __capturedNotifications?: Array<{
+        title: string;
+        message: string;
+        type: string;
+        priority: number;
+      }>;
+    };
+    g.__capturedNotifications = [];
+    chrome.notifications.create = ((
+      _id: string,
+      opts: chrome.notifications.NotificationOptions<true>,
+    ) => {
+      g.__capturedNotifications?.push({
+        title: opts.title ?? '',
+        message: opts.message ?? '',
+        type: String(opts.type ?? ''),
+        priority: opts.priority ?? 0,
+      });
+      return Promise.resolve('captured-id');
+    }) as typeof chrome.notifications.create;
+  });
+}
+
+export async function readCapturedNotifications(
+  serviceWorker: ServiceWorker,
+): Promise<Array<{ title: string; message: string; type: string; priority: number }>> {
+  const captured = await serviceWorker.evaluate(() => {
+    const g = globalThis as unknown as {
+      __capturedNotifications?: Array<{
+        title: string;
+        message: string;
+        type: string;
+        priority: number;
+      }>;
+    };
+    return g.__capturedNotifications ?? [];
+  });
+  return captured;
+}
+
 export async function readCapturedDownload(
   serviceWorker: ServiceWorker,
 ): Promise<{ filename: string; bytes: Uint8Array } | null> {

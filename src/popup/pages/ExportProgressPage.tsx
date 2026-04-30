@@ -1,3 +1,4 @@
+import { PageHeader } from '../components/PageHeader.js';
 import { Spinner } from '../components/Spinner.js';
 
 export type ExportPhase =
@@ -16,9 +17,7 @@ export interface ExportProgressPageProps {
 export function ExportProgressPage({ phase, onCancel, onDismiss }: ExportProgressPageProps) {
   return (
     <main class="flex h-full flex-col">
-      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gh-border-default bg-gh-canvas-default px-4 py-3">
-        <h1 class="text-base font-semibold text-gh-fg-default">Export</h1>
-      </header>
+      <PageHeader leading={<h1 class="text-base font-semibold text-gh-fg-default">Export</h1>} />
 
       <section class="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
         {phase.kind === 'running' && <RunningView phase={phase} />}

@@ -1,6 +1,7 @@
+import type { RenderOptions } from '../format/aiuse.js';
 import type { Provider } from '../providers/provider.js';
 import type { ExportProgressMessage } from '../state/messages.js';
-import type { ConversationPackage } from '../zip/build.js';
+import type { BuildZipOptions, ConversationPackage } from '../zip/build.js';
 import { buildZip } from '../zip/build.js';
 
 /**
@@ -62,6 +63,7 @@ export async function runExport(
   port: PortLike,
   signal: AbortSignal,
   deps: RunExportDeps,
+  renderOptions: RenderOptions = {},
 ): Promise<void> {
   const total = ids.length;
   const packages: ConversationPackage[] = [];
@@ -97,7 +99,8 @@ export async function runExport(
   if (signal.aborted) return;
 
   try {
-    const blob = await buildZip(packages);
+    const buildOpts: BuildZipOptions = { render: renderOptions };
+    const blob = await buildZip(packages, buildOpts);
     if (signal.aborted) return;
     const filename = exportFilename(deps.now?.() ?? new Date());
     await triggerDownload(blob, filename, deps);

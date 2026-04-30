@@ -1,3 +1,4 @@
+import type { RenderOptions } from './format/aiuse.js';
 import { ChatGPTProvider } from './providers/chatgpt.js';
 import type { ConversationSummary, Provider } from './providers/provider.js';
 import type {
@@ -77,10 +78,14 @@ function handleExportPort(port: chrome.runtime.Port, providerName: ProviderName)
   // Wait for that envelope, then drive the export. Anything else is ignored.
   port.onMessage.addListener((msg: ExportPortRequest) => {
     if (msg.type !== 'START') return;
-    void runExport(provider, msg.ids, port, controller.signal, {
-      downloads: chrome.downloads,
-      notifier: createNotifier(),
-    }).finally(() => {
+    void runExport(
+      provider,
+      msg.ids,
+      port,
+      controller.signal,
+      { downloads: chrome.downloads, notifier: createNotifier() },
+      buildRenderOptions(msg),
+    ).finally(() => {
       try {
         port.disconnect();
       } catch {
@@ -117,6 +122,27 @@ function createNotifier(): {
       }
     },
   };
+}
+
+/**
+ * Compile the START message's user settings into a RenderOptions value.
+ * Bad regex sources are dropped silently — the popup-side settings storage
+ * already validates on save, so reaching this with malformed sources means
+ * data drift, not user error in the current session.
+ */
+function buildRenderOptions(msg: ExportPortRequest): RenderOptions {
+  const options: RenderOptions = {};
+  if (msg.truncateLimit !== undefined) options.truncateLimit = msg.truncateLimit;
+  const extra: RegExp[] = [];
+  for (const src of msg.extraRedactPatterns ?? []) {
+    try {
+      extra.push(new RegExp(src, 'g'));
+    } catch {
+      // skip
+    }
+  }
+  if (extra.length > 0) options.redact = { extra };
+  return options;
 }
 
 async function handleRequest(req: PopupRequest): Promise<SWResponse> {
