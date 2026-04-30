@@ -10,8 +10,8 @@ export interface BadgeProps {
 }
 
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
-  neutral: 'bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200',
-  accent: 'bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200',
+  neutral: 'bg-gh-canvas-subtle text-gh-fg-default ring-1 ring-inset ring-gh-border-default',
+  accent: 'bg-gh-accent-subtle text-gh-accent-fg ring-1 ring-inset ring-gh-border-default',
 };
 
 export function Badge({ variant = 'neutral', children, ariaLabel }: BadgeProps) {

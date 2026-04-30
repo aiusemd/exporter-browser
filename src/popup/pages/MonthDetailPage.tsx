@@ -33,18 +33,18 @@ export function MonthDetailPage({
   onExport,
 }: MonthDetailPageProps) {
   return (
-    <main class="flex h-full flex-col">
-      <header class="sticky top-0 z-10 flex items-center gap-2 border-b border-zinc-200 bg-white px-2 py-3">
+    <main class="flex h-full flex-col bg-gh-canvas-default">
+      <header class="sticky top-0 z-10 flex items-center gap-2 border-b border-gh-border-default bg-gh-canvas-default px-2 py-3">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to all months"
-          class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-zinc-600 hover:bg-zinc-100"
+          class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
         >
           <ChevronLeftIcon class="h-4 w-4" />
           <span>All months</span>
         </button>
-        <h1 class="ml-1 flex-1 text-base font-semibold">{bucket.label}</h1>
+        <h1 class="ml-1 flex-1 text-base font-semibold text-gh-fg-default">{bucket.label}</h1>
         {loading && <Spinner class="mr-2" ariaLabel="Loading more conversations" />}
       </header>
 
@@ -80,18 +80,18 @@ function ConversationRow({ id, title, createdAt, checked, onToggle }: Conversati
   }, [id, onToggle]);
 
   return (
-    <li class="flex items-center gap-3 border-b border-zinc-100 px-4 py-2.5">
+    <li class="flex items-center gap-3 border-b border-gh-border-default px-4 py-2.5 hover:bg-gh-canvas-subtle">
       <input
         type="checkbox"
         checked={checked}
         onChange={handleChange}
         aria-label={`Select ${title}`}
-        class="h-4 w-4 shrink-0 rounded border-zinc-300"
+        class="h-4 w-4 shrink-0 rounded border-gh-border-default accent-gh-accent-emphasis"
       />
-      <span class="flex-1 truncate text-sm text-zinc-800" title={title}>
+      <span class="flex-1 truncate text-sm text-gh-fg-default" title={title}>
         {title}
       </span>
-      <span class="shrink-0 text-xs text-zinc-500">{formatDate(createdAt)}</span>
+      <span class="shrink-0 text-xs text-gh-fg-muted">{formatDate(createdAt)}</span>
     </li>
   );
 }
