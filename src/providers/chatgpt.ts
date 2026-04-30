@@ -4,6 +4,7 @@ import type {
   NormalizedConversation,
   NormalizedMessage,
 } from '../types.js';
+import type { ConversationSummary, ListOpts, Provider, SessionInfo } from './provider.js';
 
 /**
  * Subset of the ChatGPT /backend-api/conversation/{id} response shape that
@@ -337,4 +338,191 @@ function imageAssetToAttachment(
         filename: meta?.name ?? `${id}.png`,
         included: false,
       };
+}
+
+// ─── Runtime ────────────────────────────────────────────────────────────────
+
+const SESSION_URL = 'https://chatgpt.com/api/auth/session';
+const CONVERSATIONS_URL = 'https://chatgpt.com/backend-api/conversations';
+const CONVERSATION_URL = 'https://chatgpt.com/backend-api/conversation';
+const PAGE_LIMIT = 100;
+const PAGE_THROTTLE_MS = 250;
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 250;
+
+interface ChatGPTSessionResponse {
+  accessToken?: string;
+  expires?: string;
+  user?: { name?: string; email?: string };
+}
+
+interface ChatGPTConversationListItem {
+  id: string;
+  title: string;
+  create_time: number | string;
+  update_time: number | string;
+}
+
+interface ChatGPTConversationListResponse {
+  items: ChatGPTConversationListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export class ChatGPTProvider implements Provider {
+  readonly name = 'chatgpt' as const;
+
+  #token: string | null = null;
+
+  async getSession(): Promise<SessionInfo> {
+    let res: Response;
+    try {
+      res = await fetch(SESSION_URL, { credentials: 'include' });
+    } catch {
+      return { authenticated: false };
+    }
+
+    if (!res.ok) return { authenticated: false };
+
+    let body: ChatGPTSessionResponse | null;
+    try {
+      const text = await res.text();
+      if (text.length === 0) return { authenticated: false };
+      body = JSON.parse(text) as ChatGPTSessionResponse | null;
+    } catch {
+      return { authenticated: false };
+    }
+
+    if (body === null || typeof body.accessToken !== 'string' || body.accessToken.length === 0) {
+      return { authenticated: false };
+    }
+
+    this.#token = body.accessToken;
+
+    const info: SessionInfo = { authenticated: true };
+    if (body.user !== undefined) {
+      const user: { name?: string; email?: string } = {};
+      if (typeof body.user.name === 'string') user.name = body.user.name;
+      if (typeof body.user.email === 'string') user.email = body.user.email;
+      info.user = user;
+    }
+    if (typeof body.expires === 'string') {
+      info.expiresAt = new Date(body.expires);
+    }
+    return info;
+  }
+
+  async *listConversations(opts?: ListOpts): AsyncIterable<ConversationSummary> {
+    const limit = opts?.limit;
+    const signal = opts?.signal;
+    let offset = 0;
+    let yielded = 0;
+    let isFirstPage = true;
+
+    while (true) {
+      if (signal?.aborted) return;
+
+      if (!isFirstPage) {
+        await delay(PAGE_THROTTLE_MS);
+        if (signal?.aborted) return;
+      }
+      isFirstPage = false;
+
+      const url = `${CONVERSATIONS_URL}?offset=${offset}&limit=${PAGE_LIMIT}&order=updated`;
+      const res = await this.#authedFetch(url, { method: 'GET' });
+      const page = (await res.json()) as ChatGPTConversationListResponse;
+
+      const items = page.items ?? [];
+      for (const item of items) {
+        if (signal?.aborted) return;
+        yield mapSummary(item);
+        yielded++;
+        if (limit !== undefined && yielded >= limit) return;
+      }
+
+      const fetched = offset + items.length;
+      if (items.length === 0 || fetched >= page.total) return;
+      offset = fetched;
+    }
+  }
+
+  async getConversation(id: string): Promise<NormalizedConversation> {
+    const url = `${CONVERSATION_URL}/${encodeURIComponent(id)}`;
+    const res = await this.#authedFetch(url, { method: 'GET' });
+    const raw = (await res.json()) as ChatGPTConversation;
+    return normalize(raw);
+  }
+
+  async fetchAttachment(_ref: AttachmentRef): Promise<Blob> {
+    throw new Error('Attachment download is Phase 3 work');
+  }
+
+  async #authedFetch(url: string, init: RequestInit): Promise<Response> {
+    if (this.#token === null) {
+      const session = await this.getSession();
+      if (!session.authenticated || this.#token === null) {
+        throw new Error('Not authenticated with ChatGPT');
+      }
+    }
+
+    const res = await this.#retryFetch(url, this.#withAuth(init));
+    if (res.status !== 401) return res;
+
+    // Token may have expired mid-export; refresh once and retry.
+    this.#token = null;
+    const session = await this.getSession();
+    if (!session.authenticated || this.#token === null) {
+      throw new Error('Not authenticated with ChatGPT');
+    }
+    return this.#retryFetch(url, this.#withAuth(init));
+  }
+
+  #withAuth(init: RequestInit): RequestInit {
+    const headers = new Headers(init.headers);
+    if (this.#token !== null) headers.set('Authorization', `Bearer ${this.#token}`);
+    return { ...init, headers, credentials: 'include' };
+  }
+
+  async #retryFetch(url: string, init: RequestInit): Promise<Response> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch(url, init);
+        if (res.status >= 500 && res.status < 600) {
+          if (attempt === MAX_RETRIES) return res;
+          await delay(BASE_BACKOFF_MS * 2 ** attempt);
+          continue;
+        }
+        return res;
+      } catch (err) {
+        lastError = err;
+        if (attempt === MAX_RETRIES) throw err;
+        await delay(BASE_BACKOFF_MS * 2 ** attempt);
+      }
+    }
+    // Unreachable: loop either returns or throws on the final attempt.
+    throw lastError instanceof Error ? lastError : new Error('retryFetch exhausted');
+  }
+}
+
+function mapSummary(item: ChatGPTConversationListItem): ConversationSummary {
+  return {
+    id: item.id,
+    title: item.title,
+    createdAt: toDate(item.create_time),
+    updatedAt: toDate(item.update_time),
+  };
+}
+
+function toDate(value: number | string): Date {
+  if (typeof value === 'number') return new Date(value * 1000);
+  // Some ChatGPT endpoints return ISO strings; both shapes coexist in the wild.
+  const asNumber = Number(value);
+  if (Number.isFinite(asNumber)) return new Date(asNumber * 1000);
+  return new Date(value);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
