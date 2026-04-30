@@ -25,7 +25,7 @@ export const dispatch = {
       type: 'GET_SESSION',
       provider,
     });
-    return res.info;
+    return reviveSessionInfo(res.info);
   },
   async getConversation(provider: ProviderName, id: string): Promise<NormalizedConversation> {
     const res = await send<Extract<SWResponse, { type: 'CONVERSATION' }>>({
@@ -33,7 +33,7 @@ export const dispatch = {
       provider,
       id,
     });
-    return res.conversation;
+    return reviveConversation(res.conversation);
   },
 };
 
@@ -63,7 +63,7 @@ export function streamConversations(
 
   port.onMessage.addListener((msg: StreamMessage) => {
     if (settled) return;
-    if (msg.type === 'PAGE') handlers.onPage(msg.items);
+    if (msg.type === 'PAGE') handlers.onPage(msg.items.map(reviveSummary));
     else if (msg.type === 'DONE') settle(handlers.onDone);
     else if (msg.type === 'ERROR') settle(() => handlers.onError(msg.message));
   });
@@ -81,4 +81,33 @@ export function streamConversations(
       // already disconnected
     }
   };
+}
+
+// Chrome runtime serializes message payloads via JSON, not structured clone,
+// so Date objects arrive on this side as ISO strings (Date.prototype.toJSON).
+// Revive them at the boundary so the rest of the popup keeps the typed
+// `Date` contract from the Provider interface.
+
+function reviveSummary(item: ConversationSummary): ConversationSummary {
+  return {
+    ...item,
+    createdAt: toDate(item.createdAt),
+    updatedAt: toDate(item.updatedAt),
+  };
+}
+
+function reviveSessionInfo(info: SessionInfo): SessionInfo {
+  if (info.expiresAt === undefined) return info;
+  return { ...info, expiresAt: toDate(info.expiresAt) };
+}
+
+function reviveConversation(conv: NormalizedConversation): NormalizedConversation {
+  return {
+    ...conv,
+    createdAt: toDate(conv.createdAt),
+  };
+}
+
+function toDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
 }
