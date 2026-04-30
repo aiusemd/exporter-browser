@@ -2,20 +2,30 @@ import { useCallback } from 'preact/hooks';
 import { Badge } from '../components/Badge.js';
 import { ExportFooter } from '../components/ExportFooter.js';
 import { ChevronRightIcon } from '../components/Icons.js';
+import { Spinner } from '../components/Spinner.js';
 import type { MonthBucket } from '../state/months.js';
 
 export interface MonthListPageProps {
   buckets: MonthBucket[];
+  /** False while the SW is still streaming pages — drives the header spinner. */
+  loading: boolean;
   selectedIds: ReadonlySet<string>;
   onOpenMonth: (key: string) => void;
   onExport: () => void;
 }
 
-export function MonthListPage({ buckets, selectedIds, onOpenMonth, onExport }: MonthListPageProps) {
+export function MonthListPage({
+  buckets,
+  loading,
+  selectedIds,
+  onOpenMonth,
+  onExport,
+}: MonthListPageProps) {
   return (
     <main class="flex h-full flex-col">
-      <header class="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 py-3">
+      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3">
         <h1 class="text-base font-semibold">Conversations</h1>
+        {loading && <Spinner ariaLabel="Loading more conversations" />}
       </header>
 
       <ul class="flex-1 overflow-y-auto">

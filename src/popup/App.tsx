@@ -201,6 +201,7 @@ function ListShell({
       return (
         <MonthDetailPage
           bucket={bucket}
+          loading={!streamDone}
           selectedIds={selectedIds}
           onBack={onBack}
           onToggle={onToggle}
@@ -215,6 +216,7 @@ function ListShell({
   return (
     <MonthListPage
       buckets={buckets}
+      loading={!streamDone}
       selectedIds={selectedIds}
       onOpenMonth={onOpenMonth}
       onExport={onExport}
