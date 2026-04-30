@@ -144,7 +144,11 @@ function renderProseBody(blocks: ContentBlock[], options: RenderOptions): Render
 }
 
 function attachmentRef(ref: AttachmentRef): string {
-  return ref.included ? `<attachment:${ref.filename}>` : '<attachment>';
+  // Filename-only marker. Per design, exports don't package the binaries —
+  // the marker is informational so a reader knows there was a file at this
+  // point in the conversation. Falls back to a bare `<attachment>` only when
+  // we have no name at all (shouldn't happen with the current normalizers).
+  return ref.filename ? `<attachment:${ref.filename}>` : '<attachment>';
 }
 
 function applyTextTransforms(text: string, options: RenderOptions): string {

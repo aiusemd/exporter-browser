@@ -89,7 +89,7 @@ describe('normalize: structure', () => {
     expect(blocks[1]?.type).toBe('image');
     if (blocks[1]?.type === 'image') {
       expect(blocks[1].ref.id).toBe('file-DALLE0001');
-      expect(blocks[1].ref.included).toBe(false);
+      expect(blocks[1].ref.filename).toBe('file-DALLE0001.png');
     }
     expect(tool?.attachments).toHaveLength(1);
   });
@@ -111,7 +111,6 @@ describe('normalize: structure', () => {
       id: 'file-USERIMG0001',
       filename: 'vacation.jpg',
       mimeType: 'image/jpeg',
-      included: false,
     });
     const blocks = user?.content ?? [];
     expect(blocks[0]?.type).toBe('image');
@@ -161,17 +160,18 @@ describe('normalize → render: integration snapshots', () => {
     );
   });
 
-  it('chatgpt-dalle → ### Tool with ```json args + <attachment>', () => {
+  it('chatgpt-dalle → ### Tool with ```json args + <attachment:filename>', () => {
     const result = renderConversation(normalize(loadFixture('chatgpt-dalle.json')));
     expect(result.markdown).toBe(
       '### User\nGenerate an image of a sunset over mountains.\n\n' +
-        '### Tool\n```json\n{"prompt":"a serene sunset over mountains, photorealistic","size":"1024x1024"}\n```\n<attachment>\n\n' +
+        '### Tool\n```json\n{"prompt":"a serene sunset over mountains, photorealistic","size":"1024x1024"}\n```\n<attachment:file-DALLE0001.png>\n\n' +
         "### Assistant\nHere's the sunset over mountains as requested.",
     );
-    // Attachment is referenced in the conversation but not yet packaged
-    // (Phase 3 does the actual download), so included=false → bare <attachment>.
+    // Attachment binaries are not packaged; the filename in the marker is
+    // informational. The fixture has no metadata.attachments entry so the
+    // normalizer falls back to `${id}.png`.
     expect(result.attachments).toHaveLength(1);
-    expect(result.attachments[0]?.included).toBe(false);
+    expect(result.attachments[0]?.filename).toBe('file-DALLE0001.png');
   });
 
   it('chatgpt-browsing → drops the entire trace; citation marker stripped from final reply', () => {
@@ -185,7 +185,7 @@ describe('normalize → render: integration snapshots', () => {
   it('chatgpt-multimodal → user message renders attachment ref before text', () => {
     const result = renderConversation(normalize(loadFixture('chatgpt-multimodal.json')));
     expect(result.markdown).toBe(
-      '### User\n<attachment>\n\nWhat is in this photo?\n\n' +
+      '### User\n<attachment:vacation.jpg>\n\nWhat is in this photo?\n\n' +
         '### Assistant\nThe photo shows a beach scene with palm trees and clear blue water.',
     );
     expect(result.attachments).toHaveLength(1);

@@ -15,7 +15,6 @@ function attachment(filename: string, opts: Partial<AttachmentRef> = {}): Attach
   return {
     id: filename,
     filename,
-    included: true,
     ...opts,
   };
 }
@@ -171,7 +170,7 @@ describe('renderConversation: prose bodies', () => {
     expect(result.markdown).toBe('### System\nBe concise.');
   });
 
-  it('emits <attachment:filename> for an included image attachment in a user message', () => {
+  it('emits <attachment:filename> for an image attachment in a user message', () => {
     const ref = attachment('vacation.jpg');
     const result = renderConversation(
       conv([
@@ -188,8 +187,8 @@ describe('renderConversation: prose bodies', () => {
     expect(result.attachments).toEqual([ref]);
   });
 
-  it('emits bare <attachment> when the file is not included', () => {
-    const ref = attachment('lost.png', { included: false });
+  it('falls back to bare <attachment> only when the ref has no filename', () => {
+    const ref: AttachmentRef = { id: 'x', filename: '' };
     const result = renderConversation(
       conv([
         {
