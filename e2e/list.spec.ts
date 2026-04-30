@@ -131,6 +131,30 @@ test('shows empty state when the user has no conversations', async () => {
   await expect(ext.popup.getByRole('heading', { name: /no conversations yet/i })).toBeVisible();
 });
 
+test('header back button returns the user to the provider select page', async () => {
+  await installChatGPTMocks(ext.context, {
+    session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
+    pages: [
+      {
+        items: [{ id: 'a1', title: 'Anything', create_time: unix(2026, 3, 1), update_time: null }],
+        total: 1,
+        limit: 100,
+        offset: 0,
+      },
+    ],
+  });
+
+  await ext.popup.reload();
+  await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
+  await expect(ext.popup.getByRole('heading', { name: 'Conversations' })).toBeVisible();
+
+  await ext.popup.getByRole('button', { name: 'Back to provider select' }).click();
+
+  // Provider picker is back; the OpenAI / Anthropic rows are visible.
+  await expect(ext.popup.getByRole('heading', { name: /choose a provider/i })).toBeVisible();
+  await expect(ext.popup.getByRole('button', { name: /OpenAI/ })).toBeVisible();
+});
+
 test('sticky footer remains anchored to the bottom of the popup with a short list', async () => {
   await installChatGPTMocks(ext.context, {
     session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },

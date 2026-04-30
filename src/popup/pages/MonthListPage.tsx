@@ -1,5 +1,5 @@
 import { useCallback } from 'preact/hooks';
-import logoUrl from '../../assets/logo.svg?url';
+import { BackButton } from '../components/BackButton.js';
 import { Badge } from '../components/Badge.js';
 import { ExportFooter } from '../components/ExportFooter.js';
 import { ChevronRightIcon } from '../components/Icons.js';
@@ -14,6 +14,8 @@ export interface MonthListPageProps {
   selectedIds: ReadonlySet<string>;
   onOpenMonth: (key: string) => void;
   onExport: () => void;
+  /** Returns the user to the provider select page. */
+  onBack: () => void;
 }
 
 export function MonthListPage({
@@ -22,14 +24,17 @@ export function MonthListPage({
   selectedIds,
   onOpenMonth,
   onExport,
+  onBack,
 }: MonthListPageProps) {
   return (
     <main class="flex h-full flex-col bg-gh-canvas-default">
       <PageHeader
         leading={
           <>
-            <img src={logoUrl} alt="" class="h-5 w-5" />
-            <h1 class="text-base font-semibold text-gh-fg-default">Conversations</h1>
+            <BackButton label="Providers" ariaLabel="Back to provider select" onClick={onBack} />
+            <h1 class="ml-1 flex-1 truncate text-base font-semibold text-gh-fg-default">
+              Conversations
+            </h1>
           </>
         }
         trailing={loading ? <Spinner ariaLabel="Loading more conversations" /> : undefined}

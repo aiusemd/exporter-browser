@@ -154,6 +154,18 @@ export function App() {
   const handleOpenMonth = useCallback((key: string) => setOpenMonth(key), []);
   const handleBack = useCallback(() => setOpenMonth(null), []);
 
+  /**
+   * Walk back from the conversation list to the provider picker. Cancels any
+   * in-flight stream, drops the selection, and resets the drilled-in month
+   * so re-entering a provider doesn't surface stale state.
+   */
+  const handleBackToProviderSelect = useCallback(() => {
+    cleanupStream();
+    setSelectedIds(new Set());
+    setOpenMonth(null);
+    setView({ kind: 'select', sessionAuthenticated: true });
+  }, [cleanupStream]);
+
   const handleExport = useCallback(() => {
     if (view.kind !== 'list') return;
     if (selectedIds.size === 0) return;
@@ -263,6 +275,7 @@ export function App() {
           selectedIds={selectedIds}
           onOpenMonth={handleOpenMonth}
           onBack={handleBack}
+          onBackToProviders={handleBackToProviderSelect}
           onToggle={handleToggleSelected}
           onExport={handleExport}
         />
@@ -300,7 +313,10 @@ interface ListShellProps {
   openMonth: string | null;
   selectedIds: Set<string>;
   onOpenMonth: (key: string) => void;
+  /** MonthDetailPage's "back to all months". */
   onBack: () => void;
+  /** MonthListPage's "back to provider select". */
+  onBackToProviders: () => void;
   onToggle: (id: string) => void;
   onExport: () => void;
 }
@@ -312,6 +328,7 @@ function ListShell({
   selectedIds,
   onOpenMonth,
   onBack,
+  onBackToProviders,
   onToggle,
   onExport,
 }: ListShellProps) {
@@ -346,6 +363,7 @@ function ListShell({
       selectedIds={selectedIds}
       onOpenMonth={onOpenMonth}
       onExport={onExport}
+      onBack={onBackToProviders}
     />
   );
 }
