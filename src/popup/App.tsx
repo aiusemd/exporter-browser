@@ -227,7 +227,7 @@ function ListShell({
 function LoadingView() {
   return (
     <main class="flex h-full items-center justify-center p-6">
-      <p class="text-sm text-zinc-500">Loading…</p>
+      <p class="text-sm text-gh-fg-muted">Loading…</p>
     </main>
   );
 }
@@ -235,8 +235,8 @@ function LoadingView() {
 function ErrorView({ message }: { message: string }) {
   return (
     <main class="flex h-full flex-col gap-2 p-6">
-      <h1 class="text-base font-semibold text-red-700">Something went wrong</h1>
-      <p class="text-sm text-zinc-600">{message}</p>
+      <h1 class="text-base font-semibold text-gh-danger-fg">Something went wrong</h1>
+      <p class="text-sm text-gh-fg-muted">{message}</p>
     </main>
   );
 }

@@ -7,7 +7,7 @@ export interface SpinnerProps {
 
 export function Spinner({ class: className, ariaLabel = 'Loading' }: SpinnerProps) {
   const baseClasses =
-    'inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600';
+    'inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-gh-border-default border-t-gh-fg-muted';
   const composed = className === undefined ? baseClasses : `${baseClasses} ${className}`;
   return (
     <output class={composed} aria-live="polite">

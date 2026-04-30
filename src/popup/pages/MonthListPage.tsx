@@ -1,4 +1,5 @@
 import { useCallback } from 'preact/hooks';
+import logoUrl from '../../assets/logo.svg?url';
 import { Badge } from '../components/Badge.js';
 import { ExportFooter } from '../components/ExportFooter.js';
 import { ChevronRightIcon } from '../components/Icons.js';
@@ -22,9 +23,12 @@ export function MonthListPage({
   onExport,
 }: MonthListPageProps) {
   return (
-    <main class="flex h-full flex-col">
-      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3">
-        <h1 class="text-base font-semibold">Conversations</h1>
+    <main class="flex h-full flex-col bg-gh-canvas-default">
+      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gh-border-default bg-gh-canvas-default px-4 py-3">
+        <div class="flex items-center gap-2">
+          <img src={logoUrl} alt="" class="h-5 w-5" />
+          <h1 class="text-base font-semibold text-gh-fg-default">Conversations</h1>
+        </div>
         {loading && <Spinner ariaLabel="Loading more conversations" />}
       </header>
 
@@ -60,10 +64,10 @@ function MonthRow({ bucket, selectedInMonth, onOpen }: MonthRowProps) {
   }, [isEmpty, onOpen, bucket.key]);
 
   const baseClasses =
-    'flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3 text-left text-sm';
+    'flex w-full items-center gap-3 border-b border-gh-border-default px-4 py-3 text-left text-sm';
   const interactiveClasses = isEmpty
-    ? 'cursor-not-allowed text-zinc-400'
-    : 'text-zinc-800 hover:bg-zinc-50';
+    ? 'cursor-not-allowed text-gh-fg-subtle'
+    : 'text-gh-fg-default hover:bg-gh-canvas-subtle';
 
   return (
     <li>
@@ -85,7 +89,7 @@ function MonthRow({ bucket, selectedInMonth, onOpen }: MonthRowProps) {
           </Badge>
         )}
         {total > 0 && <Badge ariaLabel={`${total} total`}>{total}</Badge>}
-        {!isEmpty && <ChevronRightIcon class="h-4 w-4 shrink-0 text-zinc-400" />}
+        {!isEmpty && <ChevronRightIcon class="h-4 w-4 shrink-0 text-gh-fg-subtle" />}
       </button>
     </li>
   );
