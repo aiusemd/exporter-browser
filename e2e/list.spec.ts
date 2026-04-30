@@ -136,9 +136,7 @@ test('header back button returns the user to the provider select page', async ()
     session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
     pages: [
       {
-        items: [
-          { id: 'a1', title: 'Anything', create_time: unix(2026, 3, 1), update_time: null },
-        ],
+        items: [{ id: 'a1', title: 'Anything', create_time: unix(2026, 3, 1), update_time: null }],
         total: 1,
         limit: 100,
         offset: 0,
