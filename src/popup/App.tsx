@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { renderConversation } from '../format/aiuse.js';
 import type { ConversationSummary } from '../providers/provider.js';
 import type { ProviderName } from '../types.js';
 import { dispatch, streamConversations } from './dispatch.js';
 import { AuthPromptPage } from './pages/AuthPromptPage.js';
 import { EmptyConversationsPage } from './pages/EmptyConversationsPage.js';
+import type { ExportPhase } from './pages/ExportProgressPage.js';
+import { ExportProgressPage } from './pages/ExportProgressPage.js';
 import { MonthDetailPage } from './pages/MonthDetailPage.js';
 import { MonthListPage } from './pages/MonthListPage.js';
 import { ProviderSelectPage } from './pages/ProviderSelectPage.js';
+import { runExport } from './runExport.js';
 import { groupByMonth } from './state/months.js';
 import { getLastProvider, setLastProvider } from './state/storage.js';
 
@@ -16,6 +18,12 @@ type View =
   | { kind: 'loading' }
   | { kind: 'auth-prompt' }
   | { kind: 'list'; provider: ProviderName; summaries: ConversationSummary[]; streamDone: boolean }
+  | {
+      kind: 'exporting';
+      provider: ProviderName;
+      phase: ExportPhase;
+      previousList: Extract<View, { kind: 'list' }>;
+    }
   | { kind: 'error'; message: string };
 
 export function App() {
@@ -23,10 +31,16 @@ export function App() {
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const cancelStreamRef = useRef<(() => void) | null>(null);
+  const cancelExportRef = useRef<(() => void) | null>(null);
 
   const cleanupStream = useCallback(() => {
     cancelStreamRef.current?.();
     cancelStreamRef.current = null;
+  }, []);
+
+  const cleanupExport = useCallback(() => {
+    cancelExportRef.current?.();
+    cancelExportRef.current = null;
   }, []);
 
   const startStream = useCallback(
@@ -98,8 +112,9 @@ export function App() {
     return () => {
       cancelled = true;
       cleanupStream();
+      cleanupExport();
     };
-  }, [routeAfterSession, cleanupStream]);
+  }, [routeAfterSession, cleanupStream, cleanupExport]);
 
   const handleSelectProvider = useCallback(
     async (provider: ProviderName) => {
@@ -126,26 +141,61 @@ export function App() {
   const handleOpenMonth = useCallback((key: string) => setOpenMonth(key), []);
   const handleBack = useCallback(() => setOpenMonth(null), []);
 
-  const handleExport = useCallback(async () => {
+  const handleExport = useCallback(() => {
     if (view.kind !== 'list') return;
     if (selectedIds.size === 0) return;
-    // Phase 3 wires this to a real ZIP export via the SW. For now we render
-    // each selected conversation client-side and console.info the markdown
-    // so the e2e tests have something concrete to assert on.
-    for (const id of selectedIds) {
-      try {
-        const conversation = await dispatch.getConversation(view.provider, id);
-        const { markdown } = renderConversation(conversation);
-        console.info('[aiuse] rendered:', markdown);
-      } catch (err) {
-        console.error('[aiuse] render failed:', errorMessage(err));
-      }
-    }
-  }, [view, selectedIds]);
+    const previousList = view;
+    const ids = [...selectedIds];
+    setView({
+      kind: 'exporting',
+      provider: previousList.provider,
+      phase: { kind: 'running', done: 0, total: ids.length },
+      previousList,
+    });
+    cleanupExport();
+    cancelExportRef.current = runExport(previousList.provider, ids, {
+      onProgress: (p) =>
+        setView((prev) =>
+          prev.kind === 'exporting' && prev.phase.kind === 'running'
+            ? { ...prev, phase: { kind: 'running', ...p } }
+            : prev,
+        ),
+      onComplete: ({ filename, failedIds }) =>
+        setView((prev) =>
+          prev.kind === 'exporting'
+            ? { ...prev, phase: { kind: 'complete', filename, failedIds } }
+            : prev,
+        ),
+      onError: (message) =>
+        setView((prev) =>
+          prev.kind === 'exporting' ? { ...prev, phase: { kind: 'error', message } } : prev,
+        ),
+    });
+  }, [view, selectedIds, cleanupExport]);
+
+  const handleExportCancel = useCallback(() => {
+    cleanupExport();
+    setView((prev) => (prev.kind === 'exporting' ? prev.previousList : prev));
+  }, [cleanupExport]);
+
+  const handleExportDismiss = useCallback(() => {
+    cleanupExport();
+    setView((prev) => (prev.kind === 'exporting' ? prev.previousList : prev));
+    setSelectedIds(new Set());
+  }, [cleanupExport]);
 
   if (view.kind === 'loading') return <LoadingView />;
   if (view.kind === 'error') return <ErrorView message={view.message} />;
   if (view.kind === 'auth-prompt') return <AuthPromptPage />;
+  if (view.kind === 'exporting') {
+    return (
+      <ExportProgressPage
+        phase={view.phase}
+        onCancel={handleExportCancel}
+        onDismiss={handleExportDismiss}
+      />
+    );
+  }
   if (view.kind === 'list') {
     return (
       <ListShell

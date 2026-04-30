@@ -92,6 +92,56 @@ export interface ListPageShape {
   offset: number;
 }
 
+/**
+ * Override `chrome.downloads.download` inside the service worker with a stub
+ * that captures the bytes of the data URL passed to it instead of actually
+ * downloading. Lets tests pull the produced ZIP without depending on Chrome's
+ * real download UI. Stashes a `{filename, base64}` on
+ * `globalThis.__capturedDownload`.
+ *
+ * Note: re-run this helper if there's a chance the SW shut down between
+ * install and the next export — assignments don't survive SW restarts.
+ */
+export async function installDownloadsCapture(serviceWorker: ServiceWorker): Promise<void> {
+  await serviceWorker.evaluate(() => {
+    const g = globalThis as unknown as {
+      __capturedDownload?: { filename: string; base64: string };
+    };
+    g.__capturedDownload = undefined;
+    chrome.downloads.download = (async (opts: chrome.downloads.DownloadOptions) => {
+      const url = opts.url ?? '';
+      const filename = opts.filename ?? '';
+      const prefix = 'data:application/zip;base64,';
+      const base64 = url.startsWith(prefix)
+        ? url.slice(prefix.length)
+        : await fetch(url)
+            .then((r) => r.arrayBuffer())
+            .then((buf) => {
+              const bytes = new Uint8Array(buf);
+              let bin = '';
+              for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i] ?? 0);
+              return btoa(bin);
+            });
+      g.__capturedDownload = { filename, base64 };
+      return 1;
+    }) as typeof chrome.downloads.download;
+  });
+}
+
+export async function readCapturedDownload(
+  serviceWorker: ServiceWorker,
+): Promise<{ filename: string; bytes: Uint8Array } | null> {
+  const captured = await serviceWorker.evaluate(() => {
+    const g = globalThis as unknown as {
+      __capturedDownload?: { filename: string; base64: string };
+    };
+    return g.__capturedDownload ?? null;
+  });
+  if (captured === null) return null;
+  const bin = Buffer.from(captured.base64, 'base64');
+  return { filename: captured.filename, bytes: new Uint8Array(bin) };
+}
+
 export async function installChatGPTMocks(
   context: BrowserContext,
   mocks: ChatGPTMocks,

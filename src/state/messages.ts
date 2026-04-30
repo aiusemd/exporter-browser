@@ -37,3 +37,31 @@ export function parseListPortName(name: string): ProviderName | null {
   if (provider === 'chatgpt' || provider === 'claude') return provider;
   return null;
 }
+
+/** First message the popup sends after opening the export port. */
+export type ExportPortRequest = { type: 'START'; ids: string[] };
+
+/**
+ * Messages emitted on the export port (SW → popup). Like the listing port,
+ * progress is streamed so the popup can show "N of M packaged" instead of
+ * blocking until the ZIP is built. Per-conversation failures are accumulated
+ * and reported on the terminal `COMPLETE` envelope rather than aborting the
+ * whole run.
+ */
+export type ExportProgressMessage =
+  | { type: 'PROGRESS'; done: number; total: number; currentTitle?: string }
+  | { type: 'COMPLETE'; filename: string; bytes: number; failedIds: string[] }
+  | { type: 'ERROR'; message: string };
+
+const EXPORT_PORT_PREFIX = 'export';
+
+export function exportPortName(provider: ProviderName): string {
+  return `${EXPORT_PORT_PREFIX}:${provider}`;
+}
+
+export function parseExportPortName(name: string): ProviderName | null {
+  if (!name.startsWith(`${EXPORT_PORT_PREFIX}:`)) return null;
+  const provider = name.slice(EXPORT_PORT_PREFIX.length + 1);
+  if (provider === 'chatgpt' || provider === 'claude') return provider;
+  return null;
+}
