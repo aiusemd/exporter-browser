@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { renderConversation } from '../format/aiuse.js';
 import type { ConversationSummary } from '../providers/provider.js';
 import type { ProviderName } from '../types.js';
-import { dispatch } from './dispatch.js';
+import { dispatch, streamConversations } from './dispatch.js';
 import { AuthPromptPage } from './pages/AuthPromptPage.js';
 import { ConversationListPage } from './pages/ConversationListPage.js';
 import { ProviderSelectPage } from './pages/ProviderSelectPage.js';
@@ -12,25 +12,71 @@ type View =
   | { kind: 'select'; sessionAuthenticated: boolean | null }
   | { kind: 'loading' }
   | { kind: 'auth-prompt' }
-  | { kind: 'list'; summaries: ConversationSummary[] }
+  | { kind: 'list'; summaries: ConversationSummary[]; streamDone: boolean }
   | { kind: 'error'; message: string };
 
 export function App() {
   const [view, setView] = useState<View>({ kind: 'loading' });
+  const cancelStreamRef = useRef<(() => void) | null>(null);
 
-  const routeAfterSession = useCallback(async (provider: ProviderName) => {
-    try {
-      const session = await dispatch.getSession(provider);
-      if (!session.authenticated) {
-        setView({ kind: 'auth-prompt' });
-        return;
-      }
-      const summaries = await dispatch.listConversations(provider);
-      setView({ kind: 'list', summaries });
-    } catch (err) {
-      setView({ kind: 'error', message: errorMessage(err) });
-    }
+  const cleanupStream = useCallback(() => {
+    cancelStreamRef.current?.();
+    cancelStreamRef.current = null;
   }, []);
+
+  const startStream = useCallback(
+    (provider: ProviderName) => {
+      cleanupStream();
+      cancelStreamRef.current = streamConversations(provider, {
+        onPage: (items) => {
+          setView((prev) => {
+            // First page promotes the loading view to a populated list.
+            if (prev.kind === 'loading') {
+              return { kind: 'list', summaries: items, streamDone: false };
+            }
+            if (prev.kind === 'list') {
+              return { ...prev, summaries: [...prev.summaries, ...items] };
+            }
+            return prev;
+          });
+        },
+        onDone: () => {
+          setView((prev) => {
+            // If the stream finished before any page arrived, the user has
+            // zero conversations — still show the list (empty) rather than
+            // sitting on Loading… forever.
+            if (prev.kind === 'loading') {
+              return { kind: 'list', summaries: [], streamDone: true };
+            }
+            if (prev.kind === 'list') {
+              return { ...prev, streamDone: true };
+            }
+            return prev;
+          });
+        },
+        onError: (message) => {
+          setView({ kind: 'error', message });
+        },
+      });
+    },
+    [cleanupStream],
+  );
+
+  const routeAfterSession = useCallback(
+    async (provider: ProviderName) => {
+      try {
+        const session = await dispatch.getSession(provider);
+        if (!session.authenticated) {
+          setView({ kind: 'auth-prompt' });
+          return;
+        }
+        startStream(provider);
+      } catch (err) {
+        setView({ kind: 'error', message: errorMessage(err) });
+      }
+    },
+    [startStream],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -50,8 +96,9 @@ export function App() {
     })();
     return () => {
       cancelled = true;
+      cleanupStream();
     };
-  }, [routeAfterSession]);
+  }, [routeAfterSession, cleanupStream]);
 
   const handleSelectProvider = useCallback(
     async (provider: ProviderName) => {
@@ -68,7 +115,7 @@ export function App() {
 
   const handleLogFirstSelected = useCallback(async (id: string) => {
     try {
-      // ChatGPT is the only enabled provider in this PR; Claude is gated.
+      // ChatGPT is the only enabled provider until Claude lands.
       const conversation = await dispatch.getConversation('chatgpt', id);
       const { markdown } = renderConversation(conversation);
       console.info('[aiuse] rendered:', markdown);
@@ -90,6 +137,7 @@ export function App() {
     return (
       <ConversationListPage
         summaries={view.summaries}
+        streamDone={view.streamDone}
         onLogFirstSelected={handleLogFirstSelected}
       />
     );

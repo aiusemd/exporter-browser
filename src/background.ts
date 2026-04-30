@@ -1,6 +1,7 @@
 import { ChatGPTProvider } from './providers/chatgpt.js';
 import type { ConversationSummary, Provider } from './providers/provider.js';
-import type { PopupRequest, SWResponse } from './state/messages.js';
+import type { PopupRequest, SWResponse, StreamMessage } from './state/messages.js';
+import { parseListPortName } from './state/messages.js';
 import type { ProviderName } from './types.js';
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -11,10 +12,14 @@ chrome.runtime.onStartup.addListener(() => {
   console.info('[aiuse] started');
 });
 
-// Claude provider lands in PR #4; partial map until then.
+// Claude provider lands later; partial map until then.
 const providers: Partial<Record<ProviderName, Provider>> = {
   chatgpt: new ChatGPTProvider(),
 };
+
+// Buffer this many summaries before pushing to the popup. Tuned so the popup
+// renders the first batch quickly while subsequent re-renders are bounded.
+const STREAM_PAGE_SIZE = 50;
 
 chrome.runtime.onMessage.addListener((req: PopupRequest, _sender, sendResponse) => {
   handleRequest(req).then(sendResponse, (err: unknown) => {
@@ -27,6 +32,22 @@ chrome.runtime.onMessage.addListener((req: PopupRequest, _sender, sendResponse) 
   return true;
 });
 
+chrome.runtime.onConnect.addListener((port) => {
+  const providerName = parseListPortName(port.name);
+  if (providerName === null) return;
+
+  const provider = providers[providerName];
+  if (provider === undefined) {
+    safePost(port, { type: 'ERROR', message: `Provider not implemented: ${providerName}` });
+    port.disconnect();
+    return;
+  }
+
+  const controller = new AbortController();
+  port.onDisconnect.addListener(() => controller.abort());
+  void streamList(provider, controller.signal, port);
+});
+
 async function handleRequest(req: PopupRequest): Promise<SWResponse> {
   const provider = providers[req.provider];
   if (provider === undefined) {
@@ -37,18 +58,51 @@ async function handleRequest(req: PopupRequest): Promise<SWResponse> {
       const info = await provider.getSession();
       return { type: 'SESSION_INFO', info };
     }
-    case 'LIST_CONVERSATIONS': {
-      // chrome.runtime.sendMessage is request/response, so collect into one
-      // response. Phase 3 switches to a port-based streaming protocol.
-      const items: ConversationSummary[] = [];
-      for await (const summary of provider.listConversations()) {
-        items.push(summary);
-      }
-      return { type: 'CONVERSATION_PAGE', items, done: true };
-    }
     case 'GET_CONVERSATION': {
       const conversation = await provider.getConversation(req.id);
       return { type: 'CONVERSATION', conversation };
     }
+  }
+}
+
+async function streamList(
+  provider: Provider,
+  signal: AbortSignal,
+  port: chrome.runtime.Port,
+): Promise<void> {
+  let buffer: ConversationSummary[] = [];
+  try {
+    for await (const summary of provider.listConversations({ signal })) {
+      buffer.push(summary);
+      if (buffer.length >= STREAM_PAGE_SIZE) {
+        if (!safePost(port, { type: 'PAGE', items: buffer })) return;
+        buffer = [];
+      }
+    }
+    if (buffer.length > 0) {
+      if (!safePost(port, { type: 'PAGE', items: buffer })) return;
+    }
+    safePost(port, { type: 'DONE' });
+  } catch (err) {
+    if (signal.aborted) return; // popup disconnected; nothing to report.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[aiuse] stream error:', err);
+    safePost(port, { type: 'ERROR', message });
+  } finally {
+    try {
+      port.disconnect();
+    } catch {
+      // already disconnected
+    }
+  }
+}
+
+function safePost(port: chrome.runtime.Port, msg: StreamMessage): boolean {
+  try {
+    port.postMessage(msg);
+    return true;
+  } catch {
+    // Popup disconnected mid-stream.
+    return false;
   }
 }

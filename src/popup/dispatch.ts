@@ -1,5 +1,6 @@
 import type { ConversationSummary, SessionInfo } from '../providers/provider.js';
-import type { PopupRequest, SWResponse } from '../state/messages.js';
+import type { PopupRequest, SWResponse, StreamMessage } from '../state/messages.js';
+import { listPortName } from '../state/messages.js';
 import type { NormalizedConversation, ProviderName } from '../types.js';
 
 /**
@@ -26,13 +27,6 @@ export const dispatch = {
     });
     return res.info;
   },
-  async listConversations(provider: ProviderName): Promise<ConversationSummary[]> {
-    const res = await send<Extract<SWResponse, { type: 'CONVERSATION_PAGE' }>>({
-      type: 'LIST_CONVERSATIONS',
-      provider,
-    });
-    return res.items;
-  },
   async getConversation(provider: ProviderName, id: string): Promise<NormalizedConversation> {
     const res = await send<Extract<SWResponse, { type: 'CONVERSATION' }>>({
       type: 'GET_CONVERSATION',
@@ -42,3 +36,49 @@ export const dispatch = {
     return res.conversation;
   },
 };
+
+export interface ConversationStreamHandlers {
+  onPage: (items: ConversationSummary[]) => void;
+  onDone: () => void;
+  onError: (message: string) => void;
+}
+
+/**
+ * Open a streaming connection that pushes pages of conversation summaries
+ * as the service worker fetches them. Returns a cancel function that
+ * disconnects the port (which propagates to the SW as an AbortSignal).
+ */
+export function streamConversations(
+  provider: ProviderName,
+  handlers: ConversationStreamHandlers,
+): () => void {
+  const port = chrome.runtime.connect({ name: listPortName(provider) });
+  let settled = false;
+
+  const settle = (fn: () => void) => {
+    if (settled) return;
+    settled = true;
+    fn();
+  };
+
+  port.onMessage.addListener((msg: StreamMessage) => {
+    if (settled) return;
+    if (msg.type === 'PAGE') handlers.onPage(msg.items);
+    else if (msg.type === 'DONE') settle(handlers.onDone);
+    else if (msg.type === 'ERROR') settle(() => handlers.onError(msg.message));
+  });
+
+  port.onDisconnect.addListener(() => {
+    // SW disconnected without a DONE/ERROR — treat as completion.
+    settle(handlers.onDone);
+  });
+
+  return () => {
+    settle(() => {});
+    try {
+      port.disconnect();
+    } catch {
+      // already disconnected
+    }
+  };
+}

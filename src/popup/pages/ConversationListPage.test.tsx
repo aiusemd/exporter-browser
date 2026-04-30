@@ -19,15 +19,31 @@ const SUMMARIES: ConversationSummary[] = [
 ];
 
 describe('ConversationListPage', () => {
-  it('renders all summaries with a header count', () => {
-    render(<ConversationListPage summaries={SUMMARIES} onLogFirstSelected={vi.fn()} />);
+  it('renders all summaries with a header count when stream is done', () => {
+    render(
+      <ConversationListPage summaries={SUMMARIES} streamDone={true} onLogFirstSelected={vi.fn()} />,
+    );
     expect(screen.getByText('Conversations (2)')).toBeTruthy();
     expect(screen.getByText('First conversation')).toBeTruthy();
     expect(screen.getByText('Second conversation')).toBeTruthy();
   });
 
+  it('shows a "Loading more…" indicator and a + on the count while the stream is open', () => {
+    render(
+      <ConversationListPage
+        summaries={SUMMARIES}
+        streamDone={false}
+        onLogFirstSelected={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Conversations \(2\+\)/)).toBeTruthy();
+    expect(screen.getByText('Loading more conversations…')).toBeTruthy();
+  });
+
   it('updates the selected count when a checkbox is toggled', () => {
-    render(<ConversationListPage summaries={SUMMARIES} onLogFirstSelected={vi.fn()} />);
+    render(
+      <ConversationListPage summaries={SUMMARIES} streamDone={true} onLogFirstSelected={vi.fn()} />,
+    );
     expect(screen.getByText('Selected: 0')).toBeTruthy();
 
     const firstCheckbox = screen.getByLabelText('Select First conversation');
@@ -37,7 +53,9 @@ describe('ConversationListPage', () => {
   });
 
   it('disables the action button until at least one row is selected', () => {
-    render(<ConversationListPage summaries={SUMMARIES} onLogFirstSelected={vi.fn()} />);
+    render(
+      <ConversationListPage summaries={SUMMARIES} streamDone={true} onLogFirstSelected={vi.fn()} />,
+    );
     const button = screen.getByRole('button', { name: /Log first selected/ });
     expect((button as HTMLButtonElement).disabled).toBe(true);
 
@@ -47,7 +65,9 @@ describe('ConversationListPage', () => {
 
   it('invokes onLogFirstSelected with the first selected id (in display order)', () => {
     const onLog = vi.fn();
-    render(<ConversationListPage summaries={SUMMARIES} onLogFirstSelected={onLog} />);
+    render(
+      <ConversationListPage summaries={SUMMARIES} streamDone={true} onLogFirstSelected={onLog} />,
+    );
 
     // Toggle second first, then first — display order should still win.
     fireEvent.click(screen.getByLabelText('Select Second conversation'));
@@ -71,7 +91,11 @@ describe('ConversationListPage', () => {
 
     expect(() =>
       render(
-        <ConversationListPage summaries={summariesWithBadDate} onLogFirstSelected={vi.fn()} />,
+        <ConversationListPage
+          summaries={summariesWithBadDate}
+          streamDone={true}
+          onLogFirstSelected={vi.fn()}
+        />,
       ),
     ).not.toThrow();
     expect(screen.getByText('Conversation with invalid update_time')).toBeTruthy();
