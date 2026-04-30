@@ -18,6 +18,33 @@ function makeConversation(id: string, title: string, isoDate: string): Normalize
   };
 }
 
+function makeImageConversation(
+  id: string,
+  title: string,
+  isoDate: string,
+  imageRefs: { id: string; filename: string }[],
+): NormalizedConversation {
+  return {
+    id,
+    title,
+    createdAt: new Date(isoDate),
+    messages: [
+      { role: 'user', content: [{ type: 'text', text: 'gen image' }] },
+      {
+        role: 'tool',
+        toolName: 'dalle.text2im',
+        content: [
+          { type: 'code', language: 'json', code: '{"prompt":"x"}' },
+          ...imageRefs.map((r) => ({
+            type: 'image' as const,
+            ref: { ...r, included: false as const },
+          })),
+        ],
+      },
+    ],
+  };
+}
+
 interface MockPort extends PortLike {
   messages: ExportProgressMessage[];
 }
@@ -58,7 +85,10 @@ function makeDownloadsHarness(): DownloadsHarness {
   };
 }
 
-function makeProvider(conversations: Record<string, NormalizedConversation | Error>): Provider {
+function makeProvider(
+  conversations: Record<string, NormalizedConversation | Error>,
+  attachments: Record<string, Blob | Error> = {},
+): Provider {
   return {
     name: 'chatgpt',
     getSession: vi.fn(),
@@ -69,7 +99,12 @@ function makeProvider(conversations: Record<string, NormalizedConversation | Err
       if (v instanceof Error) throw v;
       return v;
     }),
-    fetchAttachment: vi.fn(),
+    fetchAttachment: vi.fn(async (ref) => {
+      const v = attachments[ref.id];
+      if (v === undefined) throw new Error(`no attachment fixture for ${ref.id}`);
+      if (v instanceof Error) throw v;
+      return v;
+    }),
   };
 }
 
@@ -211,6 +246,89 @@ describe('runExport', () => {
     expect(decoded[1]).toBe(0x4b);
     expect(decoded[2]).toBe(0x03);
     expect(decoded[3]).toBe(0x04);
+  });
+
+  it('fetches each attachment in the conversation and packages the bytes into the ZIP', async () => {
+    const conv = makeImageConversation('a', 'Sunset', '2026-04-28T00:00:00Z', [
+      { id: 'file-1', filename: 'sunset.png' },
+      { id: 'file-2', filename: 'overlay.png' },
+    ]);
+    const png1 = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' });
+    const png2 = new Blob([new Uint8Array([4, 5, 6, 7])], { type: 'image/png' });
+
+    const provider = makeProvider({ a: conv }, { 'file-1': png1, 'file-2': png2 });
+    const port = makeMockPort();
+    const harness = makeDownloadsHarness();
+    let captured: Blob | null = null;
+    const deps: RunExportDeps = {
+      downloads: harness.api,
+      blobToUrl: async (b) => {
+        captured = b;
+        return 'data:application/zip;base64,STUB';
+      },
+      now: () => new Date('2026-04-30T00:00:00Z'),
+    };
+    const ctrl = new AbortController();
+
+    await runExport(provider, ['a'], port, ctrl.signal, deps);
+
+    expect(provider.fetchAttachment).toHaveBeenCalledTimes(2);
+    expect(captured).not.toBeNull();
+    if (captured === null) return;
+    const bytes = new Uint8Array(await (captured as Blob).arrayBuffer());
+    const entries = unzipSync(bytes);
+    const names = Object.keys(entries).sort();
+    // Expect: 1 .md + 2 attachment files, all sharing the same rand suffix.
+    expect(names).toHaveLength(3);
+    expect(names.find((n) => n.endsWith('--sunset.png'))).toBeDefined();
+    expect(names.find((n) => n.endsWith('--overlay.png'))).toBeDefined();
+    expect(names.find((n) => n.endsWith('.md'))).toBeDefined();
+    // Markdown should reference the resolved filenames.
+    const mdName = names.find((n) => n.endsWith('.md')) ?? '';
+    const md = new TextDecoder().decode(entries[mdName]);
+    expect(md).toMatch(/<attachment:[^>]+--sunset\.png>/);
+    expect(md).toMatch(/<attachment:[^>]+--overlay\.png>/);
+  });
+
+  it('skips attachments whose fetch fails — markdown emits bare <attachment>, run still completes', async () => {
+    const conv = makeImageConversation('a', 'Mixed', '2026-04-28T00:00:00Z', [
+      { id: 'have', filename: 'have.png' },
+      { id: 'gone', filename: 'gone.png' },
+    ]);
+    const havePng = new Blob([new Uint8Array([9])], { type: 'image/png' });
+
+    const provider = makeProvider({ a: conv }, { have: havePng, gone: new Error('CDN expired') });
+    const port = makeMockPort();
+    const harness = makeDownloadsHarness();
+    let captured: Blob | null = null;
+    const deps: RunExportDeps = {
+      downloads: harness.api,
+      blobToUrl: async (b) => {
+        captured = b;
+        return 'data:application/zip;base64,STUB';
+      },
+      now: () => new Date('2026-04-30T00:00:00Z'),
+    };
+    const ctrl = new AbortController();
+
+    await runExport(provider, ['a'], port, ctrl.signal, deps);
+
+    // Run completes successfully even though one attachment failed.
+    const complete = port.messages.at(-1);
+    expect(complete?.type).toBe('COMPLETE');
+    if (complete?.type !== 'COMPLETE') throw new Error('expected COMPLETE');
+    expect(complete.failedIds).toEqual([]);
+
+    if (captured === null) return;
+    const entries = unzipSync(new Uint8Array(await (captured as Blob).arrayBuffer()));
+    const names = Object.keys(entries);
+    // 1 .md + 1 attachment (the missing one is dropped).
+    expect(names).toHaveLength(2);
+    const mdName = names.find((n) => n.endsWith('.md')) ?? '';
+    const md = new TextDecoder().decode(entries[mdName]);
+    // Present blob: full filename. Missing blob: bare <attachment> per spec.
+    expect(md).toMatch(/<attachment:[^>]+--have\.png>/);
+    expect(md).toMatch(/<attachment>/);
   });
 
   it('produces a valid ZIP whose entries match the AIUSE folder shape', async () => {

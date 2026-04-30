@@ -72,6 +72,13 @@ export interface ChatGPTMocks {
   session?: SessionShape | null;
   pages?: ListPageShape[];
   conversations?: Record<string, unknown>;
+  /**
+   * Map from `file-id` to the bytes that the file CDN should return when the
+   * SW resolves the signed download URL. Routes:
+   *   1. `GET /backend-api/files/{id}/download` → JSON `{ download_url }`
+   *   2. `GET https://files.oaiusercontent.com/{id}` → these bytes
+   */
+  attachments?: Record<string, Uint8Array>;
 }
 
 export interface SessionShape {
@@ -193,4 +200,41 @@ export async function installChatGPTMocks(
       });
     },
   );
+
+  // /backend-api/files/<id>/download → signed URL JSON
+  await context.route(
+    /^https:\/\/chatgpt\.com\/backend-api\/files\/([^/]+)\/download/,
+    async (route) => {
+      const match = /\/files\/([^/]+)\/download/.exec(route.request().url());
+      const id = decodeURIComponent(match?.[1] ?? '');
+      if (mocks.attachments?.[id] === undefined) {
+        await route.fulfill({ status: 404, body: 'no attachment fixture for id' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          download_url: `https://files.oaiusercontent.com/${encodeURIComponent(id)}`,
+        }),
+      });
+    },
+  );
+
+  // The signed CDN URL resolves to the actual bytes.
+  await context.route(/^https:\/\/files\.oaiusercontent\.com\/([^?]+)/, async (route) => {
+    const match = /\/([^/?]+)$/.exec(route.request().url().split('?')[0] ?? '');
+    const id = decodeURIComponent(match?.[1] ?? '');
+    const bytes = mocks.attachments?.[id];
+    if (bytes === undefined) {
+      await route.fulfill({ status: 404, body: 'no cdn fixture for id' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/octet-stream',
+      body: Buffer.from(bytes),
+    });
+  });
 }

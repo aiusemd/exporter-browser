@@ -345,10 +345,16 @@ function imageAssetToAttachment(
 const SESSION_URL = 'https://chatgpt.com/api/auth/session';
 const CONVERSATIONS_URL = 'https://chatgpt.com/backend-api/conversations';
 const CONVERSATION_URL = 'https://chatgpt.com/backend-api/conversation';
+const FILE_DOWNLOAD_URL = 'https://chatgpt.com/backend-api/files';
 const PAGE_LIMIT = 100;
 const PAGE_THROTTLE_MS = 250;
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 250;
+
+interface ChatGPTFileDownloadResponse {
+  status?: string;
+  download_url?: string;
+}
 
 interface ChatGPTSessionResponse {
   accessToken?: string;
@@ -457,8 +463,25 @@ export class ChatGPTProvider implements Provider {
     return normalize(raw);
   }
 
-  async fetchAttachment(_ref: AttachmentRef): Promise<Blob> {
-    throw new Error('Attachment download is Phase 3 work');
+  async fetchAttachment(ref: AttachmentRef): Promise<Blob> {
+    // Two-step download: ChatGPT's /files/{id}/download returns JSON with a
+    // signed CDN URL, then we fetch the binary from that URL (no auth — the
+    // URL itself carries the signature). Same shape for DALL-E images and
+    // user uploads.
+    const metaUrl = `${FILE_DOWNLOAD_URL}/${encodeURIComponent(ref.id)}/download`;
+    const metaRes = await this.#authedFetch(metaUrl, { method: 'GET' });
+    if (!metaRes.ok) {
+      throw new Error(`Attachment ${ref.id} metadata fetch failed: ${metaRes.status}`);
+    }
+    const meta = (await metaRes.json()) as ChatGPTFileDownloadResponse;
+    if (typeof meta.download_url !== 'string' || meta.download_url.length === 0) {
+      throw new Error(`Attachment ${ref.id} response missing download_url`);
+    }
+    const blobRes = await fetch(meta.download_url);
+    if (!blobRes.ok) {
+      throw new Error(`Attachment ${ref.id} download failed: ${blobRes.status}`);
+    }
+    return blobRes.blob();
   }
 
   async #authedFetch(url: string, init: RequestInit): Promise<Response> {

@@ -3,7 +3,7 @@
   "name": "AIUSE Exporter",
   "version": "0.0.0",
   "description": "Export ChatGPT (and Claude.ai in v2) conversations to AIUSE-spec markdown logs. Runs entirely client-side.",
-  "host_permissions": ["https://chatgpt.com/*"],
+  "host_permissions": ["https://chatgpt.com/*", "https://*.oaiusercontent.com/*"],
   "permissions": ["downloads", "notifications", "storage"],
   "action": {
     "default_title": "AIUSE Exporter",

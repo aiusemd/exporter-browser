@@ -1,5 +1,6 @@
 import type { Provider } from '../providers/provider.js';
 import type { ExportProgressMessage } from '../state/messages.js';
+import type { AttachmentRef, NormalizedConversation } from '../types.js';
 import type { ConversationPackage } from '../zip/build.js';
 import { buildZip } from '../zip/build.js';
 
@@ -66,7 +67,9 @@ export async function runExport(
     try {
       const conversation = await provider.getConversation(id);
       if (signal.aborted) return;
-      packages.push({ conversation });
+      const attachmentBlobs = await fetchAttachments(provider, conversation, signal);
+      if (signal.aborted) return;
+      packages.push({ conversation, attachmentBlobs });
       if (
         !safePost(port, {
           type: 'PROGRESS',
@@ -97,6 +100,47 @@ export async function runExport(
     console.error('[aiuse] export: build/download failed', err);
     safePost(port, { type: 'ERROR', message });
   }
+}
+
+/**
+ * Fetch each unique attachment in `conversation`. Per-attachment failures
+ * are logged and skipped — the renderer's `included: false` fallback emits
+ * a bare `<attachment>` so a single broken file doesn't poison the export.
+ */
+async function fetchAttachments(
+  provider: Provider,
+  conversation: NormalizedConversation,
+  signal: AbortSignal,
+): Promise<Map<string, Blob>> {
+  const refs = collectAttachmentRefs(conversation);
+  const blobs = new Map<string, Blob>();
+  for (const ref of refs) {
+    if (signal.aborted) return blobs;
+    try {
+      const blob = await provider.fetchAttachment(ref);
+      blobs.set(ref.id, blob);
+    } catch (err) {
+      console.error('[aiuse] export: failed to fetch attachment', ref.id, err);
+    }
+  }
+  return blobs;
+}
+
+function collectAttachmentRefs(conversation: NormalizedConversation): AttachmentRef[] {
+  const seen = new Map<string, AttachmentRef>();
+  for (const msg of conversation.messages) {
+    for (const block of msg.content) {
+      if (block.type === 'image' && !seen.has(block.ref.id)) {
+        seen.set(block.ref.id, block.ref);
+      }
+    }
+    if (msg.attachments !== undefined) {
+      for (const ref of msg.attachments) {
+        if (!seen.has(ref.id)) seen.set(ref.id, ref);
+      }
+    }
+  }
+  return [...seen.values()];
 }
 
 function exportFilename(now: Date): string {

@@ -350,10 +350,98 @@ describe('ChatGPTProvider.getConversation', () => {
 });
 
 describe('ChatGPTProvider.fetchAttachment', () => {
-  it('throws the Phase 3 not-implemented error', async () => {
+  let fetchSpy: ReturnType<typeof spyOnFetch>;
+
+  beforeEach(() => {
+    fetchSpy = spyOnFetch();
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it('fetches the file metadata then the signed CDN url and returns the Blob', async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(sessionBody()))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: 'success',
+          download_url: 'https://files.oaiusercontent.com/file-1?sig=xyz',
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(png, { status: 200, headers: { 'content-type': 'image/png' } }),
+      );
+
     const provider = new ChatGPTProvider();
+    const blob = await provider.fetchAttachment({
+      id: 'file-DALLE0001',
+      filename: 'sunset.png',
+      included: false,
+    });
+
+    expect(blob).toBeInstanceOf(Blob);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    expect(bytes).toEqual(png);
+
+    expect(fetchSpy.mock.calls[1]?.[0]).toBe(
+      'https://chatgpt.com/backend-api/files/file-DALLE0001/download',
+    );
+    expect(fetchSpy.mock.calls[2]?.[0]).toBe('https://files.oaiusercontent.com/file-1?sig=xyz');
+    // The signed CDN URL must NOT carry the bearer token — the URL itself
+    // is the authorization. Sending it would leak the access token to the CDN.
+    const cdnInit = fetchSpy.mock.calls[2]?.[1] as RequestInit | undefined;
+    const cdnHeaders = new Headers(cdnInit?.headers);
+    expect(cdnHeaders.get('Authorization')).toBeNull();
+  });
+
+  it('encodes special characters in the file id', async () => {
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(sessionBody()))
+      .mockResolvedValueOnce(jsonResponse({ download_url: 'https://files.oaiusercontent.com/x' }))
+      .mockResolvedValueOnce(new Response(new Uint8Array([1, 2]), { status: 200 }));
+
+    await new ChatGPTProvider().fetchAttachment({
+      id: 'file/with spaces',
+      filename: 'a.png',
+      included: false,
+    });
+    expect(fetchSpy.mock.calls[1]?.[0]).toBe(
+      'https://chatgpt.com/backend-api/files/file%2Fwith%20spaces/download',
+    );
+  });
+
+  it('throws when the metadata response lacks download_url', async () => {
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(sessionBody()))
+      .mockResolvedValueOnce(jsonResponse({ status: 'error' }));
+
     await expect(
-      provider.fetchAttachment({ id: 'file-1', filename: 'a.png', included: false }),
-    ).rejects.toThrow('Attachment download is Phase 3 work');
+      new ChatGPTProvider().fetchAttachment({ id: 'file-1', filename: 'x', included: false }),
+    ).rejects.toThrow(/missing download_url/);
+  });
+
+  it('throws when the metadata fetch returns non-OK', async () => {
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(sessionBody()))
+      .mockResolvedValueOnce(new Response('not found', { status: 404 }));
+
+    await expect(
+      new ChatGPTProvider().fetchAttachment({ id: 'file-1', filename: 'x', included: false }),
+    ).rejects.toThrow(/metadata fetch failed: 404/);
+  });
+
+  it('throws when the CDN download returns non-OK', async () => {
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(sessionBody()))
+      .mockResolvedValueOnce(
+        jsonResponse({ download_url: 'https://files.oaiusercontent.com/expired' }),
+      )
+      .mockResolvedValueOnce(new Response('gone', { status: 410 }));
+
+    await expect(
+      new ChatGPTProvider().fetchAttachment({ id: 'file-1', filename: 'x', included: false }),
+    ).rejects.toThrow(/download failed: 410/);
   });
 });
