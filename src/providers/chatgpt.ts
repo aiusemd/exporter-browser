@@ -32,7 +32,9 @@ export interface ChatGPTMessage {
   recipient: string;
   status: string;
   weight: number;
-  metadata: ChatGPTMessageMetadata;
+  // Optional because some real-world responses omit the field entirely;
+  // the fixtures we've captured always send `metadata: {}`.
+  metadata?: ChatGPTMessageMetadata;
 }
 
 interface ChatGPTAuthor {
@@ -178,7 +180,7 @@ function combineToolCallAndResult(
   const callBlock = callContentToBlock(call.content, toolName);
   if (callBlock !== null) content.push(callBlock);
 
-  const resultMeta = (result.metadata?.attachments ?? []) as ChatGPTAttachmentMetadata[];
+  const resultMeta = result.metadata?.attachments ?? [];
   appendResultBlocks(result.content, resultMeta, content, attachments);
 
   if (content.length === 0) return null;
@@ -256,7 +258,7 @@ function systemMessage(msg: ChatGPTMessage): NormalizedMessage | null {
 function userMessage(msg: ChatGPTMessage): NormalizedMessage | null {
   const content: ContentBlock[] = [];
   const attachments: AttachmentRef[] = [];
-  const attachmentMeta = (msg.metadata?.attachments ?? []) as ChatGPTAttachmentMetadata[];
+  const attachmentMeta = msg.metadata?.attachments ?? [];
 
   if (msg.content.content_type === 'multimodal_text') {
     for (const part of msg.content.parts ?? []) {
