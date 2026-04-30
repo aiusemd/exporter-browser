@@ -143,12 +143,12 @@ function renderProseBody(blocks: ContentBlock[], options: RenderOptions): Render
   return { markdown: cut, attachments };
 }
 
-function attachmentRef(ref: AttachmentRef): string {
-  // Filename-only marker. Per design, exports don't package the binaries —
-  // the marker is informational so a reader knows there was a file at this
-  // point in the conversation. Falls back to a bare `<attachment>` only when
-  // we have no name at all (shouldn't happen with the current normalizers).
-  return ref.filename ? `<attachment:${ref.filename}>` : '<attachment>';
+function attachmentRef(_ref: AttachmentRef): string {
+  // Per AIUSE.md "Special Tags": `<attachment:filename.ext>` references a
+  // file that IS adjacent in the export. Since this exporter intentionally
+  // ships markdown only (no binaries packaged), the spec requires omitting
+  // the filename — a reader sees the marker but no dangling file reference.
+  return '<attachment>';
 }
 
 function applyTextTransforms(text: string, options: RenderOptions): string {

@@ -160,16 +160,16 @@ describe('normalize → render: integration snapshots', () => {
     );
   });
 
-  it('chatgpt-dalle → ### Tool with ```json args + <attachment:filename>', () => {
+  it('chatgpt-dalle → ### Tool with ```json args + bare <attachment>', () => {
     const result = renderConversation(normalize(loadFixture('chatgpt-dalle.json')));
     expect(result.markdown).toBe(
       '### User\nGenerate an image of a sunset over mountains.\n\n' +
-        '### Tool\n```json\n{"prompt":"a serene sunset over mountains, photorealistic","size":"1024x1024"}\n```\n<attachment:file-DALLE0001.png>\n\n' +
+        '### Tool\n```json\n{"prompt":"a serene sunset over mountains, photorealistic","size":"1024x1024"}\n```\n<attachment>\n\n' +
         "### Assistant\nHere's the sunset over mountains as requested.",
     );
-    // Attachment binaries are not packaged; the filename in the marker is
-    // informational. The fixture has no metadata.attachments entry so the
-    // normalizer falls back to `${id}.png`.
+    // Spec: bare `<attachment>` since we don't package the binary. The
+    // normalizer still tracks the underlying ref/filename for downstream
+    // tooling, just not in the rendered marker.
     expect(result.attachments).toHaveLength(1);
     expect(result.attachments[0]?.filename).toBe('file-DALLE0001.png');
   });
@@ -185,7 +185,7 @@ describe('normalize → render: integration snapshots', () => {
   it('chatgpt-multimodal → user message renders attachment ref before text', () => {
     const result = renderConversation(normalize(loadFixture('chatgpt-multimodal.json')));
     expect(result.markdown).toBe(
-      '### User\n<attachment:vacation.jpg>\n\nWhat is in this photo?\n\n' +
+      '### User\n<attachment>\n\nWhat is in this photo?\n\n' +
         '### Assistant\nThe photo shows a beach scene with palm trees and clear blue water.',
     );
     expect(result.attachments).toHaveLength(1);

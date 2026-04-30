@@ -71,7 +71,7 @@ describe('buildZip', () => {
     expect(names.some((n) => n.startsWith('aiuse/2026-03/'))).toBe(true);
   });
 
-  it('emits <attachment:filename> markers in the markdown without packaging the binary', async () => {
+  it('emits bare <attachment> markers (no filename) per AIUSE spec since binaries are not packaged', async () => {
     const ref = imageRef('file-DALLE0001', 'sunset.png');
     const conv: NormalizedConversation = {
       id: 'c1',
@@ -98,7 +98,8 @@ describe('buildZip', () => {
     expect(names[0]).toMatch(/^aiuse\/2026-04\/2026-04-28--sunset--[a-z0-9]{4}\.md$/);
 
     const md = entries[names[0] ?? ''] ?? '';
-    expect(md).toContain('<attachment:sunset.png>');
+    expect(md).toContain('<attachment>');
+    expect(md).not.toContain('<attachment:'); // spec: omit filename when not packaged
   });
 
   it('forwards render options through (truncation applied via buildZip)', async () => {
