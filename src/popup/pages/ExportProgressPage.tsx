@@ -16,7 +16,8 @@ export interface ExportProgressPageProps {
 export function ExportProgressPage({ phase, onCancel, onDismiss }: ExportProgressPageProps) {
   return (
     <main class="flex h-full flex-col">
-      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gh-border-default bg-gh-canvas-default px-4 py-3">
+      {/* pr-12 leaves room for the App-level fixed Settings button. */}
+      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gh-border-default bg-gh-canvas-default px-4 py-3 pr-12">
         <h1 class="text-base font-semibold text-gh-fg-default">Export</h1>
       </header>
 

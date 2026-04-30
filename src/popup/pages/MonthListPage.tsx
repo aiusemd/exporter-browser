@@ -2,7 +2,7 @@ import { useCallback } from 'preact/hooks';
 import logoUrl from '../../assets/logo.svg?url';
 import { Badge } from '../components/Badge.js';
 import { ExportFooter } from '../components/ExportFooter.js';
-import { ChevronRightIcon, GearIcon } from '../components/Icons.js';
+import { ChevronRightIcon } from '../components/Icons.js';
 import { Spinner } from '../components/Spinner.js';
 import type { MonthBucket } from '../state/months.js';
 
@@ -13,7 +13,6 @@ export interface MonthListPageProps {
   selectedIds: ReadonlySet<string>;
   onOpenMonth: (key: string) => void;
   onExport: () => void;
-  onOpenSettings: () => void;
 }
 
 export function MonthListPage({
@@ -22,26 +21,16 @@ export function MonthListPage({
   selectedIds,
   onOpenMonth,
   onExport,
-  onOpenSettings,
 }: MonthListPageProps) {
   return (
     <main class="flex h-full flex-col bg-gh-canvas-default">
-      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gh-border-default bg-gh-canvas-default px-4 py-3">
+      {/* pr-12 leaves room for the App-level fixed Settings button. */}
+      <header class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gh-border-default bg-gh-canvas-default px-4 py-3 pr-12">
         <div class="flex items-center gap-2">
           <img src={logoUrl} alt="" class="h-5 w-5" />
           <h1 class="text-base font-semibold text-gh-fg-default">Conversations</h1>
         </div>
-        <div class="flex items-center gap-2">
-          {loading && <Spinner ariaLabel="Loading more conversations" />}
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            aria-label="Settings"
-            class="rounded-md p-1 text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
-          >
-            <GearIcon class="h-4 w-4" />
-          </button>
-        </div>
+        {loading && <Spinner ariaLabel="Loading more conversations" />}
       </header>
 
       <ul class="flex-1 overflow-y-auto">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ConversationSummary } from '../providers/provider.js';
 import type { ProviderName } from '../types.js';
+import { GearIcon } from './components/Icons.js';
 import { dispatch, streamConversations } from './dispatch.js';
 import { AuthPromptPage } from './pages/AuthPromptPage.js';
 import { EmptyConversationsPage } from './pages/EmptyConversationsPage.js';
@@ -15,19 +16,25 @@ import { groupByMonth } from './state/months.js';
 import { type UserSettings, getSettings } from './state/settings.js';
 import { getLastProvider, setLastProvider } from './state/storage.js';
 
-type View =
+type SettingsBaseView =
   | { kind: 'select'; sessionAuthenticated: boolean | null }
-  | { kind: 'loading' }
   | { kind: 'auth-prompt' }
   | { kind: 'list'; provider: ProviderName; summaries: ConversationSummary[]; streamDone: boolean }
   | {
       kind: 'exporting';
       provider: ProviderName;
       phase: ExportPhase;
-      previousList: Extract<View, { kind: 'list' }>;
+      previousList: Extract<SettingsBaseView, { kind: 'list' }>;
     }
-  | { kind: 'settings'; previousList: Extract<View, { kind: 'list' }> }
   | { kind: 'error'; message: string };
+
+type View =
+  | SettingsBaseView
+  | { kind: 'loading' }
+  // Settings can be opened from any non-loading, non-settings view; the
+  // previous view is captured so the gear button is reachable everywhere
+  // and we always restore the user to where they came from.
+  | { kind: 'settings'; previousView: SettingsBaseView };
 
 export function App() {
   const [view, setView] = useState<View>({ kind: 'loading' });
@@ -194,24 +201,52 @@ export function App() {
   }, [cleanupExport]);
 
   const handleOpenSettings = useCallback(() => {
-    setView((prev) => (prev.kind === 'list' ? { kind: 'settings', previousList: prev } : prev));
+    setView((prev) => {
+      // Already on settings, or in the transient loading state where the
+      // previous view isn't fully resolved yet — leave the view unchanged.
+      if (prev.kind === 'settings' || prev.kind === 'loading') return prev;
+      return { kind: 'settings', previousView: prev };
+    });
   }, []);
 
   const handleSettingsClose = useCallback((next: UserSettings) => {
     setSettings(next);
-    setView((prev) => (prev.kind === 'settings' ? prev.previousList : prev));
+    setView((prev) => (prev.kind === 'settings' ? prev.previousView : prev));
   }, []);
 
+  // Settings is reachable from any non-loading, non-settings view via this
+  // floating button. Rendered as a sibling of the page so it overlays sticky
+  // headers and centred empty/error layouts alike.
+  const settingsButton =
+    view.kind === 'loading' || view.kind === 'settings' ? null : (
+      <SettingsButton onClick={handleOpenSettings} />
+    );
+
   if (view.kind === 'loading') return <LoadingView />;
-  if (view.kind === 'error') return <ErrorView message={view.message} />;
-  if (view.kind === 'auth-prompt') return <AuthPromptPage />;
+  if (view.kind === 'error')
+    return (
+      <>
+        <ErrorView message={view.message} />
+        {settingsButton}
+      </>
+    );
+  if (view.kind === 'auth-prompt')
+    return (
+      <>
+        <AuthPromptPage />
+        {settingsButton}
+      </>
+    );
   if (view.kind === 'exporting') {
     return (
-      <ExportProgressPage
-        phase={view.phase}
-        onCancel={handleExportCancel}
-        onDismiss={handleExportDismiss}
-      />
+      <>
+        <ExportProgressPage
+          phase={view.phase}
+          onCancel={handleExportCancel}
+          onDismiss={handleExportDismiss}
+        />
+        {settingsButton}
+      </>
     );
   }
   if (view.kind === 'settings') {
@@ -219,24 +254,42 @@ export function App() {
   }
   if (view.kind === 'list') {
     return (
-      <ListShell
-        summaries={view.summaries}
-        streamDone={view.streamDone}
-        openMonth={openMonth}
-        selectedIds={selectedIds}
-        onOpenMonth={handleOpenMonth}
-        onBack={handleBack}
-        onToggle={handleToggleSelected}
-        onExport={handleExport}
-        onOpenSettings={handleOpenSettings}
-      />
+      <>
+        <ListShell
+          summaries={view.summaries}
+          streamDone={view.streamDone}
+          openMonth={openMonth}
+          selectedIds={selectedIds}
+          onOpenMonth={handleOpenMonth}
+          onBack={handleBack}
+          onToggle={handleToggleSelected}
+          onExport={handleExport}
+        />
+        {settingsButton}
+      </>
     );
   }
   return (
-    <ProviderSelectPage
-      sessionAuthenticated={view.sessionAuthenticated}
-      onSelect={handleSelectProvider}
-    />
+    <>
+      <ProviderSelectPage
+        sessionAuthenticated={view.sessionAuthenticated}
+        onSelect={handleSelectProvider}
+      />
+      {settingsButton}
+    </>
+  );
+}
+
+function SettingsButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Settings"
+      class="fixed right-2.5 top-2.5 z-20 rounded-md p-1.5 text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default focus:outline-none focus:ring-2 focus:ring-gh-accent-emphasis"
+    >
+      <GearIcon class="h-4 w-4" />
+    </button>
   );
 }
 
@@ -249,7 +302,6 @@ interface ListShellProps {
   onBack: () => void;
   onToggle: (id: string) => void;
   onExport: () => void;
-  onOpenSettings: () => void;
 }
 
 function ListShell({
@@ -261,7 +313,6 @@ function ListShell({
   onBack,
   onToggle,
   onExport,
-  onOpenSettings,
 }: ListShellProps) {
   const buckets = useMemo(() => groupByMonth(summaries), [summaries]);
 
@@ -294,7 +345,6 @@ function ListShell({
       selectedIds={selectedIds}
       onOpenMonth={onOpenMonth}
       onExport={onExport}
-      onOpenSettings={onOpenSettings}
     />
   );
 }

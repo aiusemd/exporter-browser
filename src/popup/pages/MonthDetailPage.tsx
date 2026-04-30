@@ -34,7 +34,8 @@ export function MonthDetailPage({
 }: MonthDetailPageProps) {
   return (
     <main class="flex h-full flex-col bg-gh-canvas-default">
-      <header class="sticky top-0 z-10 flex items-center gap-2 border-b border-gh-border-default bg-gh-canvas-default px-2 py-3">
+      {/* pr-12 leaves room for the App-level fixed Settings button. */}
+      <header class="sticky top-0 z-10 flex items-center gap-2 border-b border-gh-border-default bg-gh-canvas-default px-2 py-3 pr-12">
         <button
           type="button"
           onClick={onBack}

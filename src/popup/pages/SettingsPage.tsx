@@ -54,7 +54,7 @@ export function SettingsPage({ initial, onClose }: SettingsPageProps) {
           type="button"
           onClick={handleCancel}
           aria-label="Back without saving"
-          class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle"
+          class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
         >
           <ChevronLeftIcon class="h-4 w-4" />
           <span>Back</span>

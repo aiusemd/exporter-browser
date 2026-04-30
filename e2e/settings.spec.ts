@@ -98,19 +98,7 @@ test('persists settings across popup reloads', async () => {
   // settings entry point.
   await installChatGPTMocks(ext.context, {
     session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
-    // A single conversation so MonthListPage (not EmptyConversationsPage)
-    // renders — the latter has no Settings entry point. The test never
-    // drills in, so the conversation body is irrelevant.
-    pages: [
-      {
-        items: [
-          { id: 'c-1', title: 'Anything', create_time: 1746000000, update_time: null },
-        ],
-        total: 1,
-        limit: 100,
-        offset: 0,
-      },
-    ],
+    pages: [{ items: [], total: 0, limit: 100, offset: 0 }],
     conversations: {},
   });
 
@@ -133,19 +121,7 @@ test('persists settings across popup reloads', async () => {
 test('rejects an out-of-range truncate value with an inline error', async () => {
   await installChatGPTMocks(ext.context, {
     session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
-    // A single conversation so MonthListPage (not EmptyConversationsPage)
-    // renders — the latter has no Settings entry point. The test never
-    // drills in, so the conversation body is irrelevant.
-    pages: [
-      {
-        items: [
-          { id: 'c-1', title: 'Anything', create_time: 1746000000, update_time: null },
-        ],
-        total: 1,
-        limit: 100,
-        offset: 0,
-      },
-    ],
+    pages: [{ items: [], total: 0, limit: 100, offset: 0 }],
     conversations: {},
   });
 
@@ -164,19 +140,7 @@ test('rejects an out-of-range truncate value with an inline error', async () => 
 test('rejects a malformed regex with a line-numbered error', async () => {
   await installChatGPTMocks(ext.context, {
     session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
-    // A single conversation so MonthListPage (not EmptyConversationsPage)
-    // renders — the latter has no Settings entry point. The test never
-    // drills in, so the conversation body is irrelevant.
-    pages: [
-      {
-        items: [
-          { id: 'c-1', title: 'Anything', create_time: 1746000000, update_time: null },
-        ],
-        total: 1,
-        limit: 100,
-        offset: 0,
-      },
-    ],
+    pages: [{ items: [], total: 0, limit: 100, offset: 0 }],
     conversations: {},
   });
 
