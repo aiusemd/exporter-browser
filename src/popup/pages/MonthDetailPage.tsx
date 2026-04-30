@@ -1,6 +1,7 @@
 import { useCallback } from 'preact/hooks';
 import { ExportFooter } from '../components/ExportFooter.js';
 import { ChevronLeftIcon } from '../components/Icons.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { Spinner } from '../components/Spinner.js';
 import type { MonthBucket } from '../state/months.js';
 
@@ -34,20 +35,25 @@ export function MonthDetailPage({
 }: MonthDetailPageProps) {
   return (
     <main class="flex h-full flex-col bg-gh-canvas-default">
-      {/* pr-12 leaves room for the App-level fixed Settings button. */}
-      <header class="sticky top-0 z-10 flex items-center gap-2 border-b border-gh-border-default bg-gh-canvas-default px-2 py-3 pr-12">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back to all months"
-          class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
-        >
-          <ChevronLeftIcon class="h-4 w-4" />
-          <span>All months</span>
-        </button>
-        <h1 class="ml-1 flex-1 text-base font-semibold text-gh-fg-default">{bucket.label}</h1>
-        {loading && <Spinner class="mr-2" ariaLabel="Loading more conversations" />}
-      </header>
+      <PageHeader
+        leading={
+          <>
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back to all months"
+              class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
+            >
+              <ChevronLeftIcon class="h-4 w-4" />
+              <span>All months</span>
+            </button>
+            <h1 class="ml-1 flex-1 truncate text-base font-semibold text-gh-fg-default">
+              {bucket.label}
+            </h1>
+          </>
+        }
+        trailing={loading ? <Spinner ariaLabel="Loading more conversations" /> : undefined}
+      />
 
       <ul class="flex-1 overflow-y-auto">
         {bucket.conversations.map((c) => (

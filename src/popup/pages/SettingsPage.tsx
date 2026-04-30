@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'preact/hooks';
 import { ChevronLeftIcon } from '../components/Icons.js';
+import { PageHeader } from '../components/PageHeader.js';
 import {
   MAX_TRUNCATE_LIMIT,
   MIN_TRUNCATE_LIMIT,
@@ -49,18 +50,22 @@ export function SettingsPage({ initial, onClose }: SettingsPageProps) {
 
   return (
     <main class="flex h-full flex-col">
-      <header class="sticky top-0 z-10 flex items-center gap-2 border-b border-gh-border-default bg-gh-canvas-default px-2 py-3">
-        <button
-          type="button"
-          onClick={handleCancel}
-          aria-label="Back without saving"
-          class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
-        >
-          <ChevronLeftIcon class="h-4 w-4" />
-          <span>Back</span>
-        </button>
-        <h1 class="ml-1 flex-1 text-base font-semibold text-gh-fg-default">Settings</h1>
-      </header>
+      <PageHeader
+        leading={
+          <>
+            <button
+              type="button"
+              onClick={handleCancel}
+              aria-label="Back without saving"
+              class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
+            >
+              <ChevronLeftIcon class="h-4 w-4" />
+              <span>Back</span>
+            </button>
+            <h1 class="ml-1 flex-1 text-base font-semibold text-gh-fg-default">Settings</h1>
+          </>
+        }
+      />
 
       <section class="flex-1 overflow-y-auto px-4 py-4">
         <div class="flex flex-col gap-5">
