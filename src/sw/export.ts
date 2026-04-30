@@ -20,6 +20,15 @@ export interface DownloadsApi {
   download: (options: chrome.downloads.DownloadOptions) => Promise<number>;
 }
 
+/**
+ * Fires a system notification on terminal events. Useful when the popup is
+ * closed mid-export so the user knows the run finished. Tests inject a
+ * spy; the SW wires `chrome.notifications.create` here.
+ */
+export interface Notifier {
+  notify: (kind: 'success' | 'failure', title: string, message: string) => void;
+}
+
 export interface RunExportDeps {
   downloads: DownloadsApi;
   /**
@@ -31,6 +40,8 @@ export interface RunExportDeps {
   blobToUrl?: (blob: Blob) => Promise<string>;
   /** Override for filename timestamp; tests freeze this. */
   now?: () => Date;
+  /** Fire a system notification on COMPLETE/ERROR. Optional. */
+  notifier?: Notifier;
 }
 
 /**
@@ -91,12 +102,24 @@ export async function runExport(
     const filename = exportFilename(deps.now?.() ?? new Date());
     await triggerDownload(blob, filename, deps);
     safePost(port, { type: 'COMPLETE', filename, bytes: blob.size, failedIds });
+    deps.notifier?.notify(
+      'success',
+      'AIUSE export complete',
+      completionBody(packages.length, failedIds, filename),
+    );
   } catch (err) {
     if (signal.aborted) return;
     const message = err instanceof Error ? err.message : String(err);
     console.error('[aiuse] export: build/download failed', err);
     safePost(port, { type: 'ERROR', message });
+    deps.notifier?.notify('failure', 'AIUSE export failed', message);
   }
+}
+
+function completionBody(packaged: number, failedIds: string[], filename: string): string {
+  const baseLine = `Saved ${packaged} conversation${packaged === 1 ? '' : 's'} to ${filename}`;
+  if (failedIds.length === 0) return baseLine;
+  return `${baseLine} (${failedIds.length} could not be packaged)`;
 }
 
 function exportFilename(now: Date): string {

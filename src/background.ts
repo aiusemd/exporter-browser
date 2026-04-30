@@ -79,6 +79,7 @@ function handleExportPort(port: chrome.runtime.Port, providerName: ProviderName)
     if (msg.type !== 'START') return;
     void runExport(provider, msg.ids, port, controller.signal, {
       downloads: chrome.downloads,
+      notifier: createNotifier(),
     }).finally(() => {
       try {
         port.disconnect();
@@ -87,6 +88,35 @@ function handleExportPort(port: chrome.runtime.Port, providerName: ProviderName)
       }
     });
   });
+}
+
+/**
+ * Build a Notifier that posts via `chrome.notifications`. Used so a closed
+ * popup doesn't silently miss a completion/failure event mid-export. Errors
+ * during notification creation are logged but never thrown — a failed
+ * notification must not turn a successful export into a perceived failure.
+ */
+function createNotifier(): {
+  notify: (kind: 'success' | 'failure', title: string, message: string) => void;
+} {
+  return {
+    notify: (kind, title, message) => {
+      try {
+        // Empty string id lets Chrome auto-generate a unique id, matching
+        // the auto-id behavior of the no-id overload but in a form the
+        // typed overload accepts.
+        chrome.notifications.create('', {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL('src/assets/icons/icon-128.png'),
+          title,
+          message,
+          priority: kind === 'failure' ? 2 : 0,
+        });
+      } catch (err) {
+        console.error('[aiuse] notification failed', err);
+      }
+    },
+  };
 }
 
 async function handleRequest(req: PopupRequest): Promise<SWResponse> {
