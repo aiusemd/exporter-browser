@@ -29,6 +29,8 @@ export async function launchExtension(): Promise<ExtensionContext> {
   // Chrome's new headless mode (--headless=new) supports extensions; the
   // old one didn't. Playwright's `headless: true` uses the old mode, so we
   // pass `headless: false` and add the new-headless flag manually.
+  // --no-sandbox: Chrome's user-namespace sandbox is unavailable in most
+  // CI runners and dev containers; without this, Chromium fails to launch.
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     args: [
