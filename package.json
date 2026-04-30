@@ -15,6 +15,9 @@
   },
   "packageManager": "pnpm@9.12.0",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -24,8 +27,18 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@types/node": "20.16.10",
+    "@crxjs/vite-plugin": "2.4.0",
+    "@preact/preset-vite": "^2.10.5",
+    "@types/chrome": "^0.1.40",
+    "@types/node": "22.12.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.12",
+    "tailwindcss": "3.4.13",
     "typescript": "5.6.3",
+    "vite": "^8.0.10",
     "vitest": "2.1.2"
+  },
+  "dependencies": {
+    "preact": "^10.29.1"
   }
 }

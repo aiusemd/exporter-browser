@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "AIUSE Exporter",
+  "version": "0.0.0",
+  "description": "Export ChatGPT (and Claude.ai in v2) conversations to AIUSE-spec markdown logs. Runs entirely client-side.",
+  "host_permissions": ["https://chatgpt.com/*"],
+  "permissions": ["downloads", "notifications", "storage"],
+  "action": {
+    "default_title": "AIUSE Exporter",
+    "default_popup": "src/popup/index.html"
+  },
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  }
+}
