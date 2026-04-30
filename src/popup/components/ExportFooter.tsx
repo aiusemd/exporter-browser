@@ -22,7 +22,7 @@ export function ExportFooter({ selectedCount, onExport }: ExportFooterProps) {
         disabled={!hasSelection}
         class="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
       >
-        Export {hasSelection ? selectedCount : ''}
+        {hasSelection ? `Export ${selectedCount}` : 'Export'}
       </button>
     </footer>
   );

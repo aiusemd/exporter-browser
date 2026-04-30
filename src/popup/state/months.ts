@@ -32,6 +32,10 @@ export function groupByMonth(summaries: ConversationSummary[]): MonthBucket[] {
 
   const byKey = new Map<string, ConversationSummary[]>();
   for (const s of summaries) {
+    // Defensive against Invalid Date sneaking past the SW boundary —
+    // an unparseable date would otherwise produce a `NaN-NaN` key and
+    // silently corrupt the month-range walk.
+    if (Number.isNaN(s.createdAt.getTime())) continue;
     const key = monthKey(s.createdAt);
     const list = byKey.get(key);
     if (list === undefined) byKey.set(key, [s]);

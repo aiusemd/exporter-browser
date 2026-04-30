@@ -73,4 +73,18 @@ describe('groupByMonth', () => {
     const buckets = groupByMonth([summary('edge', '2026-04-30T23:30:00Z')]);
     expect(buckets[0]?.key).toBe('2026-04');
   });
+
+  it('skips conversations with Invalid Date createdAt rather than corrupting the range', () => {
+    const valid = summary('valid', '2026-04-15T00:00:00Z');
+    const invalid: ConversationSummary = {
+      id: 'invalid',
+      title: 'invalid',
+      createdAt: new Date(Number.NaN),
+      updatedAt: new Date(Number.NaN),
+    };
+    const buckets = groupByMonth([valid, invalid]);
+    expect(buckets).toHaveLength(1);
+    expect(buckets[0]?.key).toBe('2026-04');
+    expect(buckets[0]?.conversations.map((c) => c.id)).toEqual(['valid']);
+  });
 });
