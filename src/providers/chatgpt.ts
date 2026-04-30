@@ -513,7 +513,9 @@ export class ChatGPTProvider implements Provider {
 
 function mapSummary(item: ChatGPTConversationListItem): ConversationSummary {
   const createdAt = toDate(item.create_time);
-  const updatedAt = item.update_time !== null ? toDate(item.update_time) : createdAt;
+  // Loose != null catches both `null` (typed shape) and `undefined` (real
+  // responses sometimes omit the field entirely).
+  const updatedAt = item.update_time != null ? toDate(item.update_time) : createdAt;
   return {
     id: item.id,
     title: item.title,

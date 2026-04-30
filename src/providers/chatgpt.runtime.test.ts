@@ -190,17 +190,23 @@ describe('ChatGPTProvider.listConversations', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('falls back updatedAt to createdAt when update_time is null', async () => {
+  it('falls back updatedAt to createdAt when update_time is null or omitted', async () => {
     const page = {
       items: [
         {
-          id: 'c-no-update',
-          title: 'Never edited',
+          id: 'c-null-update',
+          title: 'Null update_time',
           create_time: 1700000000,
           update_time: null,
         },
+        {
+          id: 'c-omitted-update',
+          title: 'Missing update_time field',
+          create_time: 1700000000,
+          // update_time omitted entirely
+        },
       ],
-      total: 1,
+      total: 2,
       limit: 100,
       offset: 0,
     };
@@ -212,12 +218,11 @@ describe('ChatGPTProvider.listConversations', () => {
     const collected = [];
     for await (const s of provider.listConversations()) collected.push(s);
 
-    expect(collected).toHaveLength(1);
-    const summary = collected[0];
-    expect(summary).toBeDefined();
-    if (summary === undefined) return;
-    expect(summary.updatedAt.getTime()).toBe(summary.createdAt.getTime());
-    expect(Number.isNaN(summary.updatedAt.getTime())).toBe(false);
+    expect(collected).toHaveLength(2);
+    for (const summary of collected) {
+      expect(Number.isNaN(summary.updatedAt.getTime())).toBe(false);
+      expect(summary.updatedAt.getTime()).toBe(summary.createdAt.getTime());
+    }
   });
 
   it('propagates AbortError from fetch without retrying when signal aborts mid-request', async () => {
