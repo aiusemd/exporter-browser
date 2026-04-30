@@ -1,5 +1,3 @@
-import slugify from '@sindresorhus/slugify';
-
 const TOPIC_MAX = 40;
 const RAND_LENGTH = 4;
 const RAND_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -25,9 +23,16 @@ export function monthFolder(d: Date): string {
 
 export function slugifyTopic(title: string): string {
   if (!title) return FALLBACK_TOPIC;
-  const slug = slugify(title)
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
+  // NFKD decomposes accented characters into base + combining marks; the
+  // \p{M} strip then removes the marks, leaving the ASCII base. Anything
+  // else (CJK, emoji, punctuation) is replaced with a dash, which the
+  // collapse/trim steps remove. Non-Latin scripts thus fall back to
+  // `untitled` — acceptable per AIUSE spec section 12.2.
+  const slug = title
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   if (!slug) return FALLBACK_TOPIC;
   const truncated = slug.slice(0, TOPIC_MAX).replace(/-+$/, '');
