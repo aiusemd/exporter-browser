@@ -25,3 +25,8 @@ coverage/
 
 # vitest
 .vitest-cache/
+
+# playwright
+playwright-report/
+test-results/
+.playwright/
