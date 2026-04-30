@@ -81,6 +81,25 @@ function makeDeps(harness: DownloadsHarness, now: Date): RunExportDeps {
   };
 }
 
+interface NotifierCall {
+  kind: 'success' | 'failure';
+  title: string;
+  message: string;
+}
+
+function makeNotifier(): {
+  notify: (k: 'success' | 'failure', t: string, m: string) => void;
+  calls: NotifierCall[];
+} {
+  const calls: NotifierCall[] = [];
+  return {
+    calls,
+    notify: (kind, title, message) => {
+      calls.push({ kind, title, message });
+    },
+  };
+}
+
 describe('runExport', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -239,5 +258,101 @@ describe('runExport', () => {
     const names = Object.keys(entries);
     expect(names).toHaveLength(1);
     expect(names[0]).toMatch(/^aiuse\/2026-04\/2026-04-28--alpha--[a-z0-9]{4}\.md$/);
+  });
+
+  it('fires a success notification on COMPLETE with the count and filename', async () => {
+    const provider = makeProvider({
+      a: makeConversation('a', 'Alpha', '2026-04-28T00:00:00Z'),
+      b: makeConversation('b', 'Beta', '2026-04-28T01:00:00Z'),
+    });
+    const port = makeMockPort();
+    const harness = makeDownloadsHarness();
+    const notifier = makeNotifier();
+    const deps: RunExportDeps = {
+      ...makeDeps(harness, new Date('2026-04-30T00:00:00Z')),
+      notifier,
+    };
+
+    await runExport(provider, ['a', 'b'], port, new AbortController().signal, deps);
+
+    expect(notifier.calls).toHaveLength(1);
+    expect(notifier.calls[0]?.kind).toBe('success');
+    expect(notifier.calls[0]?.title).toBe('AIUSE export complete');
+    expect(notifier.calls[0]?.message).toMatch(
+      /Saved 2 conversations to aiuse-\d{4}-\d{2}-\d{2}-\d{6}\.zip$/,
+    );
+  });
+
+  it('reports failed-conversation count in the success notification when partial', async () => {
+    const provider = makeProvider({
+      a: makeConversation('a', 'Alpha', '2026-04-28T00:00:00Z'),
+      b: new Error('fetch broke'),
+    });
+    const port = makeMockPort();
+    const harness = makeDownloadsHarness();
+    const notifier = makeNotifier();
+    const deps: RunExportDeps = {
+      ...makeDeps(harness, new Date('2026-04-30T00:00:00Z')),
+      notifier,
+    };
+
+    await runExport(provider, ['a', 'b'], port, new AbortController().signal, deps);
+
+    expect(notifier.calls).toHaveLength(1);
+    expect(notifier.calls[0]?.kind).toBe('success');
+    expect(notifier.calls[0]?.message).toMatch(
+      /Saved 1 conversation to aiuse-.+\.zip \(1 could not be packaged\)$/,
+    );
+  });
+
+  it('fires a failure notification on terminal ERROR (e.g. download throws)', async () => {
+    const provider = makeProvider({
+      a: makeConversation('a', 'Alpha', '2026-04-28T00:00:00Z'),
+    });
+    const port = makeMockPort();
+    const notifier = makeNotifier();
+    const deps: RunExportDeps = {
+      downloads: {
+        download: async () => {
+          throw new Error('downloads API unavailable');
+        },
+      },
+      blobToUrl: async () => 'data:application/zip;base64,STUB',
+      now: () => new Date('2026-04-30T00:00:00Z'),
+      notifier,
+    };
+
+    await runExport(provider, ['a'], port, new AbortController().signal, deps);
+
+    expect(notifier.calls).toHaveLength(1);
+    expect(notifier.calls[0]?.kind).toBe('failure');
+    expect(notifier.calls[0]?.title).toBe('AIUSE export failed');
+    expect(notifier.calls[0]?.message).toBe('downloads API unavailable');
+  });
+
+  it('does not fire any notification when aborted mid-run', async () => {
+    const provider = makeProvider({
+      a: makeConversation('a', 'Alpha', '2026-04-28T00:00:00Z'),
+      b: makeConversation('b', 'Beta', '2026-04-28T01:00:00Z'),
+    });
+    const port = makeMockPort();
+    const harness = makeDownloadsHarness();
+    const notifier = makeNotifier();
+    const ctrl = new AbortController();
+    const deps: RunExportDeps = {
+      ...makeDeps(harness, new Date('2026-04-30T00:00:00Z')),
+      notifier,
+    };
+
+    const originalGet = provider.getConversation;
+    provider.getConversation = vi.fn(async (id: string) => {
+      const result = await originalGet(id);
+      if (id === 'a') ctrl.abort();
+      return result;
+    });
+
+    await runExport(provider, ['a', 'b'], port, ctrl.signal, deps);
+
+    expect(notifier.calls).toHaveLength(0);
   });
 });
