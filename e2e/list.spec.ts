@@ -130,3 +130,37 @@ test('shows empty state when the user has no conversations', async () => {
 
   await expect(ext.popup.getByRole('heading', { name: /no conversations yet/i })).toBeVisible();
 });
+
+test('sticky footer remains anchored to the bottom of the popup with a short list', async () => {
+  await installChatGPTMocks(ext.context, {
+    session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
+    pages: [
+      {
+        items: [{ id: 'one', title: 'Only one', create_time: unix(2026, 3, 1), update_time: null }],
+        total: 1,
+        limit: 100,
+        offset: 0,
+      },
+    ],
+  });
+
+  await ext.popup.reload();
+  await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
+  await expect(
+    ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel(2026, 3)}`) }),
+  ).toBeVisible();
+
+  const footer = ext.popup.locator('footer').first();
+  const body = ext.popup.locator('body');
+  const footerBox = await footer.boundingBox();
+  const bodyBox = await body.boundingBox();
+  expect(footerBox).not.toBeNull();
+  expect(bodyBox).not.toBeNull();
+  if (footerBox === null || bodyBox === null) return;
+
+  const footerBottom = footerBox.y + footerBox.height;
+  const bodyBottom = bodyBox.y + bodyBox.height;
+  // Footer's bottom edge should sit flush with the popup body's bottom
+  // (within 1px to allow for sub-pixel layout).
+  expect(Math.abs(footerBottom - bodyBottom)).toBeLessThan(1);
+});
