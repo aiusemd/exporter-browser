@@ -430,7 +430,9 @@ export class ChatGPTProvider implements Provider {
       isFirstPage = false;
 
       const url = `${CONVERSATIONS_URL}?offset=${offset}&limit=${PAGE_LIMIT}&order=updated`;
-      const res = await this.#authedFetch(url, { method: 'GET' });
+      const init: RequestInit =
+        signal !== undefined ? { method: 'GET', signal } : { method: 'GET' };
+      const res = await this.#authedFetch(url, init);
       const page = (await res.json()) as ChatGPTConversationListResponse;
 
       const items = page.items ?? [];
@@ -496,6 +498,8 @@ export class ChatGPTProvider implements Provider {
         }
         return res;
       } catch (err) {
+        // Caller-initiated abort: propagate immediately, never retry.
+        if (init.signal?.aborted === true) throw err;
         lastError = err;
         if (attempt === MAX_RETRIES) throw err;
         await delay(BASE_BACKOFF_MS * 2 ** attempt);

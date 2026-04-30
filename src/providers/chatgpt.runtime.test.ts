@@ -189,6 +189,28 @@ describe('ChatGPTProvider.listConversations', () => {
     // No second page fetched — only session + first page.
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+
+  it('propagates AbortError from fetch without retrying when signal aborts mid-request', async () => {
+    const controller = new AbortController();
+    fetchSpy.mockResolvedValueOnce(jsonResponse(sessionBody())).mockImplementationOnce(async () => {
+      controller.abort();
+      throw new DOMException('The operation was aborted', 'AbortError');
+    });
+
+    const provider = new ChatGPTProvider();
+    let caught: unknown;
+    try {
+      for await (const _ of provider.listConversations({ signal: controller.signal })) {
+        // unreachable
+      }
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeInstanceOf(DOMException);
+    // Session + the single aborted attempt — no exponential-backoff retries.
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('ChatGPTProvider.getConversation', () => {
