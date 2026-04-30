@@ -89,10 +89,18 @@ for (const { file, exercises } of FIXTURES) {
 
     await ext.popup.reload();
     await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
-    await expect(ext.popup.getByText(fixture.title)).toBeVisible();
 
-    await ext.popup.getByRole('checkbox', { name: `Select ${fixture.title}` }).check();
-    await ext.popup.getByRole('button', { name: /log first selected/i }).click();
+    // The new month-grouped flow: click into the fixture's month, then check
+    // the conversation, then click Export.
+    const created = new Date(fixture.create_time * 1000);
+    const monthLabel = new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(created);
+    await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel}`) }).click();
+    await ext.popup.getByLabel(`Select ${fixture.title}`).check();
+    await ext.popup.getByRole('button', { name: 'Export 1' }).click();
 
     await expect.poll(() => renderedMessages.length).toBeGreaterThan(0);
 

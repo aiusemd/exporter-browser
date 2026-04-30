@@ -11,39 +11,122 @@ test.afterEach(async () => {
   await ext.cleanup();
 });
 
-function makeItems(start: number, count: number) {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `c-${start + i}`,
-    title: `Conversation ${start + i}`,
-    create_time: 1700000000 + (start + i),
-    update_time: 1700000000 + (start + i) + 100,
-  }));
+const MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+function monthLabel(year: number, monthIndex: number): string {
+  return MONTH_FORMATTER.format(new Date(Date.UTC(year, monthIndex, 1)));
+}
+function unix(year: number, monthIndex: number, day: number): number {
+  return Math.floor(Date.UTC(year, monthIndex, day) / 1000);
 }
 
-test('streams pages and shows progressive list rendering up to the final count', async () => {
+test('groups conversations by created month with empty middle months greyed out', async () => {
   await installChatGPTMocks(ext.context, {
-    session: {
-      accessToken: 'tok-test',
-      expires: '2030-01-01T00:00:00.000Z',
-      user: { name: 'E2E', email: 'e2e@example.com' },
-    },
+    session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
     pages: [
-      { items: makeItems(0, 100), total: 150, limit: 100, offset: 0 },
-      { items: makeItems(100, 50), total: 150, limit: 100, offset: 100 },
+      {
+        items: [
+          // April 2026: 2 conversations
+          { id: 'apr-1', title: 'April first', create_time: unix(2026, 3, 28), update_time: null },
+          { id: 'apr-2', title: 'April second', create_time: unix(2026, 3, 15), update_time: null },
+          // February 2026: 1 conversation (March is empty between)
+          {
+            id: 'feb-1',
+            title: 'February only',
+            create_time: unix(2026, 1, 10),
+            update_time: null,
+          },
+        ],
+        total: 3,
+        limit: 100,
+        offset: 0,
+      },
     ],
   });
 
   await ext.popup.reload();
   await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
 
-  // First batch (50) arrives quickly — the header shows the open-stream "+".
-  await expect(ext.popup.getByRole('heading', { name: /Conversations \(\d+\+\)/ })).toBeVisible();
+  // Most recent populated month at top.
+  await expect(
+    ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel(2026, 3)}`) }),
+  ).toBeVisible();
 
-  // Final count arrives after the second page; spinner clears.
-  await expect(ext.popup.getByRole('heading', { name: 'Conversations (150)' })).toBeVisible();
-  await expect(ext.popup.getByText('Loading more conversations…')).toHaveCount(0);
+  // Empty March 2026 row is rendered but disabled.
+  const marchBtn = ext.popup.getByRole('button', {
+    name: `${monthLabel(2026, 2)} (no conversations)`,
+  });
+  await expect(marchBtn).toBeVisible();
+  await expect(marchBtn).toBeDisabled();
 
-  // Spot-check a couple of rows.
-  await expect(ext.popup.getByText('Conversation 0')).toBeVisible();
-  await expect(ext.popup.getByText('Conversation 149')).toBeVisible();
+  // February 2026 — populated, clickable.
+  await expect(
+    ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel(2026, 1)}`) }),
+  ).toBeVisible();
+});
+
+test('drills into a month, checks conversations, back-button preserves selection', async () => {
+  await installChatGPTMocks(ext.context, {
+    session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
+    pages: [
+      {
+        items: [
+          { id: 'apr-1', title: 'April first', create_time: unix(2026, 3, 28), update_time: null },
+          { id: 'apr-2', title: 'April second', create_time: unix(2026, 3, 15), update_time: null },
+          {
+            id: 'feb-1',
+            title: 'February only',
+            create_time: unix(2026, 1, 10),
+            update_time: null,
+          },
+        ],
+        total: 3,
+        limit: 100,
+        offset: 0,
+      },
+    ],
+  });
+
+  await ext.popup.reload();
+  await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
+
+  // Drill into April.
+  await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel(2026, 3)}`) }).click();
+  await expect(ext.popup.getByRole('heading', { name: monthLabel(2026, 3) })).toBeVisible();
+
+  // Check one row.
+  await ext.popup.getByLabel('Select April first').check();
+
+  // Back to root.
+  await ext.popup.getByRole('button', { name: /back to all months/i }).click();
+  await expect(ext.popup.getByRole('heading', { name: 'Conversations' })).toBeVisible();
+
+  // Footer reflects 1 selected (text + Export button label both update).
+  await expect(ext.popup.getByText('1 selected', { exact: true })).toBeVisible();
+  await expect(ext.popup.getByRole('button', { name: 'Export 1' })).toBeVisible();
+  // Per-month accent badge shows the count selected within that month.
+  await expect(ext.popup.getByLabel(`1 selected in ${monthLabel(2026, 3)}`)).toBeVisible();
+  // February has none selected — no per-month accent badge for that row.
+  await expect(ext.popup.getByLabel(/selected in February 2026/)).toHaveCount(0);
+
+  // Drill into February, add another, back out — total now 2 across both months.
+  await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel(2026, 1)}`) }).click();
+  await ext.popup.getByLabel('Select February only').check();
+  await ext.popup.getByRole('button', { name: /back to all months/i }).click();
+  await expect(ext.popup.getByRole('button', { name: 'Export 2' })).toBeVisible();
+});
+
+test('shows empty state when the user has no conversations', async () => {
+  await installChatGPTMocks(ext.context, {
+    session: { accessToken: 'tok-test', expires: '2030-01-01T00:00:00.000Z' },
+    pages: [{ items: [], total: 0, limit: 100, offset: 0 }],
+  });
+
+  await ext.popup.reload();
+  await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
+
+  await expect(ext.popup.getByRole('heading', { name: /no conversations yet/i })).toBeVisible();
 });
