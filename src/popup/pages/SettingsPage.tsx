@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'preact/hooks';
-import { ChevronLeftIcon } from '../components/Icons.js';
+import { BackButton } from '../components/BackButton.js';
 import { PageHeader } from '../components/PageHeader.js';
 import {
   MAX_TRUNCATE_LIMIT,
@@ -53,15 +53,7 @@ export function SettingsPage({ initial, onClose }: SettingsPageProps) {
       <PageHeader
         leading={
           <>
-            <button
-              type="button"
-              onClick={handleCancel}
-              aria-label="Back without saving"
-              class="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gh-fg-muted hover:bg-gh-canvas-subtle hover:text-gh-fg-default"
-            >
-              <ChevronLeftIcon class="h-4 w-4" />
-              <span>Back</span>
-            </button>
+            <BackButton label="Back" ariaLabel="Back without saving" onClick={handleCancel} />
             <h1 class="ml-1 flex-1 text-base font-semibold text-gh-fg-default">Settings</h1>
           </>
         }
