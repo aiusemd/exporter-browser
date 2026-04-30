@@ -322,22 +322,13 @@ function imageAssetToAttachment(
   pointer: ChatGPTImageAssetPointer,
   metadata: ReadonlyArray<ChatGPTAttachmentMetadata> = [],
 ): AttachmentRef {
-  // asset_pointer looks like 'file-service://file-XXX'. The file id is what
-  // the /backend-api/files/{id}/download endpoint expects.
+  // asset_pointer looks like 'file-service://file-XXX'. Strip the scheme so
+  // the id matches the metadata.attachments entry shape.
   const id = pointer.asset_pointer.replace(/^file-service:\/\//, '');
   const meta = metadata.find((m) => m.id === id);
   return meta?.mime_type !== undefined
-    ? {
-        id,
-        filename: meta.name,
-        mimeType: meta.mime_type,
-        included: false,
-      }
-    : {
-        id,
-        filename: meta?.name ?? `${id}.png`,
-        included: false,
-      };
+    ? { id, filename: meta.name, mimeType: meta.mime_type }
+    : { id, filename: meta?.name ?? `${id}.png` };
 }
 
 // ─── Runtime ────────────────────────────────────────────────────────────────
@@ -458,7 +449,12 @@ export class ChatGPTProvider implements Provider {
   }
 
   async fetchAttachment(_ref: AttachmentRef): Promise<Blob> {
-    throw new Error('Attachment download is Phase 3 work');
+    // Exports intentionally don't package attachment binaries — the markdown
+    // emits a `<attachment:filename>` marker so a reader knows there was a
+    // file at that point in the conversation, but we don't bulk up the ZIP
+    // with the bytes. Provider interface keeps the method for a potential
+    // future opt-in, but no caller invokes it today.
+    throw new Error('Attachment binaries are not packaged in exports');
   }
 
   async #authedFetch(url: string, init: RequestInit): Promise<Response> {

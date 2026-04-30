@@ -18,8 +18,6 @@ export interface AttachmentRef {
   filename: string;
   /** MIME type if known. */
   mimeType?: string;
-  /** When false, the format module emits bare `<attachment>` (no filename). */
-  included: boolean;
 }
 
 export interface NormalizedMessage {

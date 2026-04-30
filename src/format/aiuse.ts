@@ -143,8 +143,12 @@ function renderProseBody(blocks: ContentBlock[], options: RenderOptions): Render
   return { markdown: cut, attachments };
 }
 
-function attachmentRef(ref: AttachmentRef): string {
-  return ref.included ? `<attachment:${ref.filename}>` : '<attachment>';
+function attachmentRef(_ref: AttachmentRef): string {
+  // Per AIUSE.md "Special Tags": `<attachment:filename.ext>` references a
+  // file that IS adjacent in the export. Since this exporter intentionally
+  // ships markdown only (no binaries packaged), the spec requires omitting
+  // the filename — a reader sees the marker but no dangling file reference.
+  return '<attachment>';
 }
 
 function applyTextTransforms(text: string, options: RenderOptions): string {

@@ -350,10 +350,10 @@ describe('ChatGPTProvider.getConversation', () => {
 });
 
 describe('ChatGPTProvider.fetchAttachment', () => {
-  it('throws the Phase 3 not-implemented error', async () => {
+  it('throws — exports do not package attachment binaries by design', async () => {
     const provider = new ChatGPTProvider();
-    await expect(
-      provider.fetchAttachment({ id: 'file-1', filename: 'a.png', included: false }),
-    ).rejects.toThrow('Attachment download is Phase 3 work');
+    await expect(provider.fetchAttachment({ id: 'file-1', filename: 'a.png' })).rejects.toThrow(
+      'Attachment binaries are not packaged in exports',
+    );
   });
 });

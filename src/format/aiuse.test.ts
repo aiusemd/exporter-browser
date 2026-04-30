@@ -15,7 +15,6 @@ function attachment(filename: string, opts: Partial<AttachmentRef> = {}): Attach
   return {
     id: filename,
     filename,
-    included: true,
     ...opts,
   };
 }
@@ -171,7 +170,7 @@ describe('renderConversation: prose bodies', () => {
     expect(result.markdown).toBe('### System\nBe concise.');
   });
 
-  it('emits <attachment:filename> for an included image attachment in a user message', () => {
+  it('emits bare <attachment> for image attachments — exports are markdown-only per AIUSE spec', () => {
     const ref = attachment('vacation.jpg');
     const result = renderConversation(
       conv([
@@ -184,21 +183,11 @@ describe('renderConversation: prose bodies', () => {
         },
       ]),
     );
-    expect(result.markdown).toBe('### User\n<attachment:vacation.jpg>\n\nWhat is in this photo?');
+    // Spec: `<attachment:filename>` would imply the file is adjacent in the
+    // export. Since we don't package binaries, the spec requires omitting
+    // the filename.
+    expect(result.markdown).toBe('### User\n<attachment>\n\nWhat is in this photo?');
     expect(result.attachments).toEqual([ref]);
-  });
-
-  it('emits bare <attachment> when the file is not included', () => {
-    const ref = attachment('lost.png', { included: false });
-    const result = renderConversation(
-      conv([
-        {
-          role: 'user',
-          content: [{ type: 'image', ref }],
-        },
-      ]),
-    );
-    expect(result.markdown).toBe('### User\n<attachment>');
   });
 });
 
@@ -219,7 +208,7 @@ describe('renderConversation: tool messages', () => {
     expect(result.markdown).toBe('### Tool\n```python\nprint(2+2)\n```\n```text\n4\n```');
   });
 
-  it('renders a DALL-E call as ```json args + <attachment:filename>', () => {
+  it('renders a DALL-E call as ```json args + bare <attachment>', () => {
     const ref = attachment('sunset.png');
     const result = renderConversation(
       conv([
@@ -238,7 +227,7 @@ describe('renderConversation: tool messages', () => {
       ]),
     );
     expect(result.markdown).toBe(
-      '### Tool\n```json\n{"prompt":"sunset","size":"1024x1024"}\n```\n<attachment:sunset.png>',
+      '### Tool\n```json\n{"prompt":"sunset","size":"1024x1024"}\n```\n<attachment>',
     );
     expect(result.attachments).toEqual([ref]);
   });
