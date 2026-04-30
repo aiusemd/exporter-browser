@@ -3,6 +3,8 @@ import type { ConversationSummary } from '../../providers/provider.js';
 
 export interface ConversationListPageProps {
   summaries: ConversationSummary[];
+  /** False while the SW is still streaming pages; true once the stream is done. */
+  streamDone: boolean;
   onLogFirstSelected: (id: string) => void;
 }
 
@@ -17,7 +19,7 @@ function formatDate(date: Date): string {
 }
 
 export function ConversationListPage(props: ConversationListPageProps) {
-  const { summaries, onLogFirstSelected } = props;
+  const { summaries, streamDone, onLogFirstSelected } = props;
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   const toggle = useCallback((id: string) => {
@@ -47,7 +49,10 @@ export function ConversationListPage(props: ConversationListPageProps) {
   return (
     <main class="flex h-full flex-col">
       <header class="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 py-3">
-        <h1 class="text-base font-semibold">Conversations ({summaries.length})</h1>
+        <h1 class="text-base font-semibold">
+          Conversations ({summaries.length}
+          {!streamDone && '+'})
+        </h1>
       </header>
 
       <ul class="flex-1 overflow-y-auto">
@@ -59,6 +64,15 @@ export function ConversationListPage(props: ConversationListPageProps) {
             onToggle={toggle}
           />
         ))}
+        {!streamDone && (
+          <li class="flex items-center justify-center gap-2 px-4 py-3 text-xs text-zinc-500">
+            <span
+              class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600"
+              aria-hidden="true"
+            />
+            <span>Loading more conversations…</span>
+          </li>
+        )}
       </ul>
 
       <footer class="sticky bottom-0 flex items-center justify-between border-t border-zinc-200 bg-white px-4 py-3">
