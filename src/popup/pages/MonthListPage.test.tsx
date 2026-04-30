@@ -31,6 +31,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     expect(screen.getByText('April 2026')).toBeTruthy();
@@ -49,6 +50,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     const empty = screen.getByRole('button', { name: 'March 2026 (no conversations)' });
@@ -64,6 +66,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={onOpenMonth}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /Open April 2026/ }));
@@ -79,6 +82,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={onOpenMonth}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'March 2026 (no conversations)' }));
@@ -93,6 +97,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set(['a1'])}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     expect(screen.getByLabelText('1 selected in April 2026')).toBeTruthy();
@@ -108,6 +113,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     const button = screen.getByRole('button', { name: /Export/i });
@@ -120,6 +126,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set(['a1', 'b1'])}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     expect((screen.getByRole('button', { name: 'Export 2' }) as HTMLButtonElement).disabled).toBe(
@@ -136,6 +143,7 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     // Spinner has role=status with sr-only "Loading more conversations" text.
@@ -148,8 +156,25 @@ describe('MonthListPage', () => {
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
     expect(screen.queryByText('Loading more conversations')).toBeNull();
+  });
+
+  it('calls onBack when the "Providers" header button is clicked', () => {
+    const onBack = vi.fn();
+    render(
+      <MonthListPage
+        buckets={BUCKETS}
+        loading={false}
+        selectedIds={new Set()}
+        onOpenMonth={vi.fn()}
+        onExport={vi.fn()}
+        onBack={onBack}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Back to provider select' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });
