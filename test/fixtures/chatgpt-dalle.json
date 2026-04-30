@@ -1,0 +1,99 @@
+{
+  "_comment": "DALL-E image generation. Assistant emits message with recipient='dalle.text2im' and JSON tool args; tool message author.role='tool', author.name='dalle.text2im' contains an image_asset_pointer in multimodal_text. Format module emits a ### Tool block with ```json <args> ``` followed by an <attachment:filename.ext> reference. Per spec section 7.6 amendment, the tool input must be fenced (we use ```json), not bare prose.",
+  "title": "Sunset image",
+  "create_time": 1746230400.0,
+  "update_time": 1746230500.0,
+  "conversation_id": "66666666-6666-4666-8666-666666666666",
+  "current_node": "msg-assistant-final-6",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-6"],
+      "message": null
+    },
+    "msg-user-6": {
+      "id": "msg-user-6",
+      "parent": "root",
+      "children": ["msg-assistant-call-6"],
+      "message": {
+        "id": "msg-user-6",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1746230410.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["Generate an image of a sunset over mountains."]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-call-6": {
+      "id": "msg-assistant-call-6",
+      "parent": "msg-user-6",
+      "children": ["msg-tool-output-6"],
+      "message": {
+        "id": "msg-assistant-call-6",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746230415.0,
+        "content": {
+          "content_type": "code",
+          "language": "json",
+          "text": "{\"prompt\":\"a serene sunset over mountains, photorealistic\",\"size\":\"1024x1024\"}"
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "dalle.text2im"
+      }
+    },
+    "msg-tool-output-6": {
+      "id": "msg-tool-output-6",
+      "parent": "msg-assistant-call-6",
+      "children": ["msg-assistant-final-6"],
+      "message": {
+        "id": "msg-tool-output-6",
+        "author": { "role": "tool", "name": "dalle.text2im", "metadata": {} },
+        "create_time": 1746230420.0,
+        "content": {
+          "content_type": "multimodal_text",
+          "parts": [
+            {
+              "content_type": "image_asset_pointer",
+              "asset_pointer": "file-service://file-DALLE0001",
+              "size_bytes": 67,
+              "width": 1024,
+              "height": 1024,
+              "fovea": null,
+              "metadata": null
+            }
+          ]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-final-6": {
+      "id": "msg-assistant-final-6",
+      "parent": "msg-tool-output-6",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-final-6",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746230425.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["Here's the sunset over mountains as requested."]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}

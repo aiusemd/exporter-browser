@@ -1,0 +1,80 @@
+{
+  "_comment": "Code interpreter (python) tool invocation. Assistant emits a message with recipient='python' containing the code; the python tool emits a follow-up message with author.role='tool', author.name='python', and the execution output. Format module collapses these two into a single ### Tool block per spec section 7.6: ```python <code> ``` followed by ```text <output> ```.",
+  "title": "Compute factorial",
+  "create_time": 1746144000.0,
+  "update_time": 1746144100.0,
+  "conversation_id": "55555555-5555-4555-8555-555555555555",
+  "current_node": "msg-assistant-final-5",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-5"],
+      "message": null
+    },
+    "msg-user-5": {
+      "id": "msg-user-5",
+      "parent": "root",
+      "children": ["msg-assistant-call-5"],
+      "message": {
+        "id": "msg-user-5",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1746144010.0,
+        "content": { "content_type": "text", "parts": ["What is 10 factorial?"] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-call-5": {
+      "id": "msg-assistant-call-5",
+      "parent": "msg-user-5",
+      "children": ["msg-tool-output-5"],
+      "message": {
+        "id": "msg-assistant-call-5",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746144015.0,
+        "content": {
+          "content_type": "code",
+          "language": "python",
+          "text": "import math\nprint(math.factorial(10))"
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "python"
+      }
+    },
+    "msg-tool-output-5": {
+      "id": "msg-tool-output-5",
+      "parent": "msg-assistant-call-5",
+      "children": ["msg-assistant-final-5"],
+      "message": {
+        "id": "msg-tool-output-5",
+        "author": { "role": "tool", "name": "python", "metadata": {} },
+        "create_time": 1746144020.0,
+        "content": { "content_type": "execution_output", "text": "3628800\n" },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-final-5": {
+      "id": "msg-assistant-final-5",
+      "parent": "msg-tool-output-5",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-final-5",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746144025.0,
+        "content": { "content_type": "text", "parts": ["10! = 3,628,800."] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}

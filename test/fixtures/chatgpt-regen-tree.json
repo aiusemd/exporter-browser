@@ -1,0 +1,64 @@
+{
+  "_comment": "Conversation with a regenerated assistant response. The user message has two assistant children: msg-assistant-A (discarded) and msg-assistant-B (canonical). current_node points at the canonical leaf. Format module's tree flattening should walk parent links from current_node, reverse, and emit only the canonical branch — never including msg-assistant-A.",
+  "title": "What is the capital of France",
+  "create_time": 1746057600.0,
+  "update_time": 1746057700.0,
+  "conversation_id": "44444444-4444-4444-8444-444444444444",
+  "current_node": "msg-assistant-B",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-4"],
+      "message": null
+    },
+    "msg-user-4": {
+      "id": "msg-user-4",
+      "parent": "root",
+      "children": ["msg-assistant-A", "msg-assistant-B"],
+      "message": {
+        "id": "msg-user-4",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1746057610.0,
+        "content": { "content_type": "text", "parts": ["What is the capital of France?"] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-A": {
+      "id": "msg-assistant-A",
+      "parent": "msg-user-4",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-A",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746057620.0,
+        "content": { "content_type": "text", "parts": ["The capital is Paris."] },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-B": {
+      "id": "msg-assistant-B",
+      "parent": "msg-user-4",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-B",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746057640.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["Paris is the capital of France — it's also the largest city in the country."]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}

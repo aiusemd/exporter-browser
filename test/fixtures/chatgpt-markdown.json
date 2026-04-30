@@ -1,0 +1,52 @@
+{
+  "_comment": "Assistant reply containing structured markdown (heading + bullet list). Format module should wrap this in a ```markdown block per spec.",
+  "title": "Slide outline",
+  "create_time": 1745884800.0,
+  "update_time": 1745884900.0,
+  "conversation_id": "22222222-2222-4222-8222-222222222222",
+  "current_node": "msg-assistant-2",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-2"],
+      "message": null
+    },
+    "msg-user-2": {
+      "id": "msg-user-2",
+      "parent": "root",
+      "children": ["msg-assistant-2"],
+      "message": {
+        "id": "msg-user-2",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1745884810.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["Create bullet points for my presentation"]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-2": {
+      "id": "msg-assistant-2",
+      "parent": "msg-user-2",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-2",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1745884820.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["# Presentation\n## Slide 1\n* Bullet a\n* Bullet b\n* Bullet c\n"]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}

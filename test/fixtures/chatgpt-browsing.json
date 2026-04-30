@@ -1,0 +1,129 @@
+{
+  "_comment": "Web browsing tool trace. Multiple browser-tool messages (search, then quote) are produced before the assistant's final reply. Format module v1 collapses the entire trace to a single line under the assistant role ('Searching the web...') per plan section 7.6. The final assistant message is preserved.",
+  "title": "Look up the moon distance",
+  "create_time": 1746316800.0,
+  "update_time": 1746316900.0,
+  "conversation_id": "77777777-7777-4777-8777-777777777777",
+  "current_node": "msg-assistant-final-7",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-7"],
+      "message": null
+    },
+    "msg-user-7": {
+      "id": "msg-user-7",
+      "parent": "root",
+      "children": ["msg-assistant-search-7"],
+      "message": {
+        "id": "msg-user-7",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1746316810.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["What's the average distance from Earth to the Moon?"]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-search-7": {
+      "id": "msg-assistant-search-7",
+      "parent": "msg-user-7",
+      "children": ["msg-tool-search-7"],
+      "message": {
+        "id": "msg-assistant-search-7",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746316815.0,
+        "content": {
+          "content_type": "code",
+          "language": "json",
+          "text": "{\"action\":\"search\",\"query\":\"average distance from Earth to the Moon\"}"
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "browser"
+      }
+    },
+    "msg-tool-search-7": {
+      "id": "msg-tool-search-7",
+      "parent": "msg-assistant-search-7",
+      "children": ["msg-assistant-quote-7"],
+      "message": {
+        "id": "msg-tool-search-7",
+        "author": { "role": "tool", "name": "browser", "metadata": {} },
+        "create_time": 1746316820.0,
+        "content": {
+          "content_type": "tether_browsing_display",
+          "result": "Search results: ... Moon distance ~384,400 km on average ...",
+          "summary": null
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-quote-7": {
+      "id": "msg-assistant-quote-7",
+      "parent": "msg-tool-search-7",
+      "children": ["msg-tool-quote-7"],
+      "message": {
+        "id": "msg-assistant-quote-7",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746316825.0,
+        "content": {
+          "content_type": "code",
+          "language": "json",
+          "text": "{\"action\":\"quote\",\"url\":\"https://example.com/moon\",\"line_start\":1,\"line_end\":3}"
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "browser"
+      }
+    },
+    "msg-tool-quote-7": {
+      "id": "msg-tool-quote-7",
+      "parent": "msg-assistant-quote-7",
+      "children": ["msg-assistant-final-7"],
+      "message": {
+        "id": "msg-tool-quote-7",
+        "author": { "role": "tool", "name": "browser", "metadata": {} },
+        "create_time": 1746316830.0,
+        "content": {
+          "content_type": "tether_quote",
+          "url": "https://example.com/moon",
+          "domain": "example.com",
+          "text": "The Moon orbits Earth at an average distance of about 384,400 km."
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-final-7": {
+      "id": "msg-assistant-final-7",
+      "parent": "msg-tool-quote-7",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-final-7",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746316835.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["The Moon's average distance from Earth is about 384,400 km 【4:0†source】."]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}

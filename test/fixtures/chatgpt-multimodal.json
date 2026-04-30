@@ -1,0 +1,72 @@
+{
+  "_comment": "User-uploaded image. The user message contains a multimodal_text content with an image_asset_pointer. Format module emits the user prompt followed by an <attachment:filename.ext> reference inline.",
+  "title": "Describe this photo",
+  "create_time": 1746403200.0,
+  "update_time": 1746403300.0,
+  "conversation_id": "88888888-8888-4888-8888-888888888888",
+  "current_node": "msg-assistant-8",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-8"],
+      "message": null
+    },
+    "msg-user-8": {
+      "id": "msg-user-8",
+      "parent": "root",
+      "children": ["msg-assistant-8"],
+      "message": {
+        "id": "msg-user-8",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1746403210.0,
+        "content": {
+          "content_type": "multimodal_text",
+          "parts": [
+            {
+              "content_type": "image_asset_pointer",
+              "asset_pointer": "file-service://file-USERIMG0001",
+              "size_bytes": 67,
+              "width": 1024,
+              "height": 768,
+              "fovea": null,
+              "metadata": null
+            },
+            "What is in this photo?"
+          ]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {
+          "attachments": [
+            {
+              "id": "file-USERIMG0001",
+              "name": "vacation.jpg",
+              "mime_type": "image/jpeg",
+              "size": 67
+            }
+          ]
+        },
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-8": {
+      "id": "msg-assistant-8",
+      "parent": "msg-user-8",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-8",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1746403220.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["The photo shows a beach scene with palm trees and clear blue water."]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "_comment": "Assistant reply that is a single code block embedded in prose. Format module should detect 'structured markdown' (contains a fenced block) and wrap the whole thing in ```markdown — using fence escalation for the outer fence.",
+  "title": "Reverse a string in JavaScript",
+  "create_time": 1745971200.0,
+  "update_time": 1745971300.0,
+  "conversation_id": "33333333-3333-4333-8333-333333333333",
+  "current_node": "msg-assistant-3",
+  "mapping": {
+    "root": {
+      "id": "root",
+      "parent": null,
+      "children": ["msg-user-3"],
+      "message": null
+    },
+    "msg-user-3": {
+      "id": "msg-user-3",
+      "parent": "root",
+      "children": ["msg-assistant-3"],
+      "message": {
+        "id": "msg-user-3",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1745971210.0,
+        "content": {
+          "content_type": "text",
+          "parts": ["How do I reverse an ascii string in javascript?"]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    },
+    "msg-assistant-3": {
+      "id": "msg-assistant-3",
+      "parent": "msg-user-3",
+      "children": [],
+      "message": {
+        "id": "msg-assistant-3",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1745971220.0,
+        "content": {
+          "content_type": "text",
+          "parts": [
+            "Here's a one-liner:\n\n```js\nfunction reverse(s) {\n  return s.split(\"\").reverse().join(\"\");\n}\n```\n"
+          ]
+        },
+        "status": "finished_successfully",
+        "weight": 1.0,
+        "metadata": {},
+        "recipient": "all"
+      }
+    }
+  }
+}
