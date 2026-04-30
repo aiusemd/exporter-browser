@@ -27,6 +27,7 @@ describe('MonthListPage', () => {
     render(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
@@ -44,6 +45,7 @@ describe('MonthListPage', () => {
     render(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
@@ -58,6 +60,7 @@ describe('MonthListPage', () => {
     render(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set()}
         onOpenMonth={onOpenMonth}
         onExport={vi.fn()}
@@ -72,6 +75,7 @@ describe('MonthListPage', () => {
     render(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set()}
         onOpenMonth={onOpenMonth}
         onExport={vi.fn()}
@@ -85,6 +89,7 @@ describe('MonthListPage', () => {
     render(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set(['a1'])}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
@@ -99,6 +104,7 @@ describe('MonthListPage', () => {
     const { rerender } = render(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set()}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
@@ -110,6 +116,7 @@ describe('MonthListPage', () => {
     rerender(
       <MonthListPage
         buckets={BUCKETS}
+        loading={false}
         selectedIds={new Set(['a1', 'b1'])}
         onOpenMonth={vi.fn()}
         onExport={vi.fn()}
@@ -119,5 +126,30 @@ describe('MonthListPage', () => {
       false,
     );
     expect(screen.getByLabelText('2 selected')).toBeTruthy();
+  });
+
+  it('shows a header spinner while loading and hides it once done', () => {
+    const { rerender } = render(
+      <MonthListPage
+        buckets={BUCKETS}
+        loading={true}
+        selectedIds={new Set()}
+        onOpenMonth={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+    // Spinner has role=status with sr-only "Loading more conversations" text.
+    expect(screen.getByText('Loading more conversations')).toBeTruthy();
+
+    rerender(
+      <MonthListPage
+        buckets={BUCKETS}
+        loading={false}
+        selectedIds={new Set()}
+        onOpenMonth={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('Loading more conversations')).toBeNull();
   });
 });

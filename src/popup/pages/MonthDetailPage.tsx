@@ -1,10 +1,13 @@
 import { useCallback } from 'preact/hooks';
 import { ExportFooter } from '../components/ExportFooter.js';
 import { ChevronLeftIcon } from '../components/Icons.js';
+import { Spinner } from '../components/Spinner.js';
 import type { MonthBucket } from '../state/months.js';
 
 export interface MonthDetailPageProps {
   bucket: MonthBucket;
+  /** False while the SW is still streaming pages — drives the header spinner. */
+  loading: boolean;
   selectedIds: ReadonlySet<string>;
   onBack: () => void;
   onToggle: (id: string) => void;
@@ -23,6 +26,7 @@ function formatDate(date: Date): string {
 
 export function MonthDetailPage({
   bucket,
+  loading,
   selectedIds,
   onBack,
   onToggle,
@@ -40,7 +44,8 @@ export function MonthDetailPage({
           <ChevronLeftIcon class="h-4 w-4" />
           <span>All months</span>
         </button>
-        <h1 class="ml-1 text-base font-semibold">{bucket.label}</h1>
+        <h1 class="ml-1 flex-1 text-base font-semibold">{bucket.label}</h1>
+        {loading && <Spinner class="mr-2" ariaLabel="Loading more conversations" />}
       </header>
 
       <ul class="flex-1 overflow-y-auto">

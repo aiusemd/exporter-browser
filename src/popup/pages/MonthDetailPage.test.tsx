@@ -23,6 +23,7 @@ describe('MonthDetailPage', () => {
     render(
       <MonthDetailPage
         bucket={BUCKET}
+        loading={false}
         selectedIds={new Set()}
         onBack={vi.fn()}
         onToggle={vi.fn()}
@@ -39,6 +40,7 @@ describe('MonthDetailPage', () => {
     render(
       <MonthDetailPage
         bucket={BUCKET}
+        loading={false}
         selectedIds={new Set()}
         onBack={onBack}
         onToggle={vi.fn()}
@@ -54,6 +56,7 @@ describe('MonthDetailPage', () => {
     render(
       <MonthDetailPage
         bucket={BUCKET}
+        loading={false}
         selectedIds={new Set()}
         onBack={vi.fn()}
         onToggle={onToggle}
@@ -68,6 +71,7 @@ describe('MonthDetailPage', () => {
     render(
       <MonthDetailPage
         bucket={BUCKET}
+        loading={false}
         selectedIds={new Set(['latest'])}
         onBack={vi.fn()}
         onToggle={vi.fn()}
@@ -76,5 +80,31 @@ describe('MonthDetailPage', () => {
     );
     expect((screen.getByLabelText('Select Latest chat') as HTMLInputElement).checked).toBe(true);
     expect((screen.getByLabelText('Select Middle chat') as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('shows a header spinner while loading and hides it once done', () => {
+    const { rerender } = render(
+      <MonthDetailPage
+        bucket={BUCKET}
+        loading={true}
+        selectedIds={new Set()}
+        onBack={vi.fn()}
+        onToggle={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Loading more conversations')).toBeTruthy();
+
+    rerender(
+      <MonthDetailPage
+        bucket={BUCKET}
+        loading={false}
+        selectedIds={new Set()}
+        onBack={vi.fn()}
+        onToggle={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('Loading more conversations')).toBeNull();
   });
 });
