@@ -123,6 +123,37 @@ describe('renderConversation: prose bodies', () => {
     expect(result.markdown).toBe(`### Assistant\n${'x'.repeat(20)}<truncated>`);
   });
 
+  it('applies the truncate limit to the assembled body, not per-block', () => {
+    // Two text blocks of 30 chars each — combined exceeds the 20-char limit
+    // even though neither block alone would. The spec's 4000-char rule is
+    // per-reply, not per-block.
+    const result = renderConversation(
+      conv([
+        {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'A'.repeat(30) },
+            { type: 'text', text: 'B'.repeat(30) },
+          ],
+        },
+      ]),
+      { truncateLimit: 20 },
+    );
+    expect(result.markdown).toBe(`### Assistant\n${'A'.repeat(20)}<truncated>`);
+  });
+
+  it('falls back to ```text fence for a single prose code block with no language', () => {
+    const result = renderConversation(
+      conv([
+        {
+          role: 'assistant',
+          content: [{ type: 'code', language: '', code: 'unknown stuff' }],
+        },
+      ]),
+    );
+    expect(result.markdown).toBe('### Assistant\n```text\nunknown stuff\n```');
+  });
+
   it('skips empty system messages', () => {
     const result = renderConversation(
       conv([

@@ -90,7 +90,8 @@ function renderToolBody(message: NormalizedMessage, options: RenderOptions): Ren
     }
   }
 
-  return { markdown: fragments.join('\n'), attachments };
+  const combined = fragments.join('\n');
+  return { markdown: truncate(combined, options.truncateLimit), attachments };
 }
 
 function renderProseBody(blocks: ContentBlock[], options: RenderOptions): RenderResult {
@@ -98,7 +99,8 @@ function renderProseBody(blocks: ContentBlock[], options: RenderOptions): Render
   if (blocks.length === 1 && blocks[0]?.type === 'code') {
     const block = blocks[0];
     const code = applyTextTransforms(block.code, options);
-    return { markdown: wrap(code, block.language), attachments: [] };
+    const cut = truncate(code, options.truncateLimit);
+    return { markdown: wrap(cut, block.language || 'text'), attachments: [] };
   }
 
   const attachments: AttachmentRef[] = [];
@@ -113,7 +115,7 @@ function renderProseBody(blocks: ContentBlock[], options: RenderOptions): Render
       if (STRUCTURED_LINE.test(text) || text.includes('```')) hasStructure = true;
     } else if (block.type === 'code') {
       const code = applyTextTransforms(block.code, options);
-      fragments.push(wrap(code, block.language));
+      fragments.push(wrap(code, block.language || 'text'));
       hasStructure = true;
     } else if (block.type === 'image') {
       attachments.push(block.ref);
@@ -129,11 +131,16 @@ function renderProseBody(blocks: ContentBlock[], options: RenderOptions): Render
 
   if (combined.length === 0) return { markdown: '', attachments };
 
+  // Apply the spec's 4000-char limit to the assembled body, not per-block.
+  // truncate() is fence-aware so cuts inside embedded code blocks walk back
+  // to safe positions before any outer ```markdown wrap is added.
+  const cut = truncate(combined, options.truncateLimit);
+
   if (hasStructure) {
-    return { markdown: wrap(combined, 'markdown'), attachments };
+    return { markdown: wrap(cut, 'markdown'), attachments };
   }
 
-  return { markdown: combined, attachments };
+  return { markdown: cut, attachments };
 }
 
 function attachmentRef(ref: AttachmentRef): string {
@@ -141,9 +148,11 @@ function attachmentRef(ref: AttachmentRef): string {
 }
 
 function applyTextTransforms(text: string, options: RenderOptions): string {
+  // Citation strip + redact only. Per-message truncation is applied to the
+  // assembled body in render*Body — the AIUSE 4000-char rule applies to the
+  // whole reply, not to each block.
   let result = text.replace(CITATION_MARKER, '');
   result = redact(result, options.redact);
-  result = truncate(result, options.truncateLimit);
   return result;
 }
 
