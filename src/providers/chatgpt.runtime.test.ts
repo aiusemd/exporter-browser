@@ -190,6 +190,41 @@ describe('ChatGPTProvider.listConversations', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
+  it('falls back updatedAt to createdAt when update_time is null or omitted', async () => {
+    const page = {
+      items: [
+        {
+          id: 'c-null-update',
+          title: 'Null update_time',
+          create_time: 1700000000,
+          update_time: null,
+        },
+        {
+          id: 'c-omitted-update',
+          title: 'Missing update_time field',
+          create_time: 1700000000,
+          // update_time omitted entirely
+        },
+      ],
+      total: 2,
+      limit: 100,
+      offset: 0,
+    };
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(sessionBody()))
+      .mockResolvedValueOnce(jsonResponse(page));
+
+    const provider = new ChatGPTProvider();
+    const collected = [];
+    for await (const s of provider.listConversations()) collected.push(s);
+
+    expect(collected).toHaveLength(2);
+    for (const summary of collected) {
+      expect(Number.isNaN(summary.updatedAt.getTime())).toBe(false);
+      expect(summary.updatedAt.getTime()).toBe(summary.createdAt.getTime());
+    }
+  });
+
   it('propagates AbortError from fetch without retrying when signal aborts mid-request', async () => {
     const controller = new AbortController();
     fetchSpy.mockResolvedValueOnce(jsonResponse(sessionBody())).mockImplementationOnce(async () => {

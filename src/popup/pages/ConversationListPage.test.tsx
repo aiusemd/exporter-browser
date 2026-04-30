@@ -58,4 +58,22 @@ describe('ConversationListPage', () => {
     expect(onLog).toHaveBeenCalledTimes(1);
     expect(onLog).toHaveBeenCalledWith('first');
   });
+
+  it('renders a row with an Invalid Date without throwing', () => {
+    const summariesWithBadDate: ConversationSummary[] = [
+      {
+        id: 'invalid',
+        title: 'Conversation with invalid update_time',
+        createdAt: new Date('2026-04-20T00:00:00Z'),
+        updatedAt: new Date(Number.NaN),
+      },
+    ];
+
+    expect(() =>
+      render(
+        <ConversationListPage summaries={summariesWithBadDate} onLogFirstSelected={vi.fn()} />,
+      ),
+    ).not.toThrow();
+    expect(screen.getByText('Conversation with invalid update_time')).toBeTruthy();
+  });
 });

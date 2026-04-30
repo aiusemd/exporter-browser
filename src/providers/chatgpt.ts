@@ -360,7 +360,8 @@ interface ChatGPTConversationListItem {
   id: string;
   title: string;
   create_time: number | string;
-  update_time: number | string;
+  // null/missing for conversations never updated after creation; fall back to create_time.
+  update_time: number | string | null;
 }
 
 interface ChatGPTConversationListResponse {
@@ -511,11 +512,15 @@ export class ChatGPTProvider implements Provider {
 }
 
 function mapSummary(item: ChatGPTConversationListItem): ConversationSummary {
+  const createdAt = toDate(item.create_time);
+  // Loose != null catches both `null` (typed shape) and `undefined` (real
+  // responses sometimes omit the field entirely).
+  const updatedAt = item.update_time != null ? toDate(item.update_time) : createdAt;
   return {
     id: item.id,
     title: item.title,
-    createdAt: toDate(item.create_time),
-    updatedAt: toDate(item.update_time),
+    createdAt,
+    updatedAt,
   };
 }
 

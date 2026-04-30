@@ -12,6 +12,7 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
 });
 
 function formatDate(date: Date): string {
+  if (Number.isNaN(date.getTime())) return '';
   return DATE_FORMATTER.format(date);
 }
 
