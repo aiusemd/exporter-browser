@@ -101,6 +101,32 @@ describe('normalize: structure', () => {
     expect(conv.messages[1]?.role).toBe('assistant');
   });
 
+  it('emits voice-mode audio_transcription parts as plain text and ignores audio asset pointers', () => {
+    const conv = normalize(loadFixture('chatgpt-voice.json'));
+    // user → assistant → user → assistant. The voice-mode system messages
+    // are filtered via is_visually_hidden_from_conversation, and the
+    // model_editable_context assistant turn renders as empty and is dropped.
+    expect(conv.messages).toHaveLength(4);
+    expect(conv.messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user', 'assistant']);
+    expect(conv.messages[0]?.content[0]).toEqual({
+      type: 'text',
+      text: expect.stringContaining('cat has got a cut on his foot'),
+    });
+    expect(conv.messages[1]?.content[0]).toEqual({
+      type: 'text',
+      text: expect.stringContaining('Poor little guy'),
+    });
+    expect(conv.messages[2]?.content[0]).toEqual({
+      type: 'text',
+      text: 'What can I do? What can we do? Nothing.',
+    });
+    // No attachments — sediment:// audio pointers are recognised but not
+    // packaged or referenced.
+    for (const message of conv.messages) {
+      expect(message.attachments).toBeUndefined();
+    }
+  });
+
   it('extracts user-uploaded image as an attachment in chatgpt-multimodal', () => {
     const conv = normalize(loadFixture('chatgpt-multimodal.json'));
     expect(conv.messages).toHaveLength(2);
@@ -180,6 +206,18 @@ describe('normalize → render: integration snapshots', () => {
       "### User\nWhat's the average distance from Earth to the Moon?\n\n" +
         "### Assistant\nThe Moon's average distance from Earth is about 384,400 km .",
     );
+  });
+
+  it('chatgpt-voice → renders transcripts as plain prose, no attachment markers', () => {
+    const result = renderConversation(normalize(loadFixture('chatgpt-voice.json')));
+    expect(result.attachments).toEqual([]);
+    expect(result.markdown).toContain('### User\nAll right, so my cat has got a cut');
+    expect(result.markdown).toContain('### Assistant\nPoor little guy');
+    expect(result.markdown).toContain('### User\nWhat can I do? What can we do? Nothing.');
+    expect(result.markdown).toContain('### Assistant\nIt’s understandable to feel a bit helpless');
+    // Plain prose — no ```markdown wrap, no <attachment> markers.
+    expect(result.markdown).not.toContain('```markdown');
+    expect(result.markdown).not.toContain('<attachment');
   });
 
   it('chatgpt-multimodal → user message renders attachment ref before text', () => {
