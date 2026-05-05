@@ -102,10 +102,10 @@ export function App() {
 
   /**
    * Refresh the auth status reflected on the provider-select page.
-   * Called on initial mount (when there's no saved provider), when the user
-   * navigates back from the conversation list, and whenever the popup
-   * regains focus while the select view is up. Keeps the badge in sync
-   * with reality without requiring the user to do anything.
+   * Called on initial mount (when there's no saved provider) and on every
+   * navigation back from the conversation list. Chrome action popups close
+   * on blur, so a fresh popup open re-runs the boot effect — no further
+   * polling is needed in this surface.
    */
   const refreshSelectStatus = useCallback(async (provider: ProviderName) => {
     try {
@@ -113,8 +113,11 @@ export function App() {
       setView((prev) =>
         prev.kind === 'select' ? { ...prev, sessionAuthenticated: session.authenticated } : prev,
       );
-    } catch {
-      // Surface the indeterminate state rather than crashing the page.
+    } catch (err) {
+      // Network or messaging error — leave the badge indeterminate rather
+      // than crashing the page, but log with context so the failure surfaces
+      // in devtools instead of being silently dropped.
+      console.warn('[aiuse] refreshSelectStatus failed', err);
       setView((prev) => (prev.kind === 'select' ? { ...prev, sessionAuthenticated: null } : prev));
     }
   }, []);
@@ -164,22 +167,6 @@ export function App() {
       cleanupExport();
     };
   }, [routeAfterSession, refreshSelectStatus, cleanupStream, cleanupExport]);
-
-  // Re-check auth whenever the popup regains focus while the user is on
-  // the provider-select page. Covers the flow: user clicks a "Login needed"
-  // tile → chatgpt.com opens in a new tab → user logs in → returns to the
-  // popup → the badge flips to "Available" without further input.
-  useEffect(() => {
-    if (view.kind !== 'select') return;
-    const onVisible = () => {
-      if (document.visibilityState !== 'visible') return;
-      void refreshSelectStatus('chatgpt');
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [view.kind, refreshSelectStatus]);
 
   const handleSelectProvider = useCallback(
     async (provider: ProviderName) => {
