@@ -21,8 +21,7 @@ const manifest = JSON.parse(readFileSync(resolve(REPO_ROOT, 'manifest.json'), 'u
 
 if (pkg.version !== manifest.version) {
   console.error(
-    `version mismatch: package.json=${pkg.version} manifest.json=${manifest.version}\n` +
-      `bump both before packaging`,
+    `version mismatch: package.json=${pkg.version} manifest.json=${manifest.version}\nbump both before packaging`,
   );
   process.exit(1);
 }
@@ -53,4 +52,4 @@ const outPath = resolve(REPO_ROOT, `aiuse-exporter-${pkg.version}.zip`);
 writeFileSync(outPath, zipped);
 
 console.log(`wrote ${relative(REPO_ROOT, outPath)} (${zipped.length.toLocaleString()} bytes)`);
-console.log(`upload this file in the Chrome Web Store Developer Dashboard.`);
+console.log('upload this file in the Chrome Web Store Developer Dashboard.');
