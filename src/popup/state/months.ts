@@ -3,17 +3,12 @@ import type { ConversationSummary } from '../../providers/provider.js';
 export interface MonthBucket {
   /** Stable key — `YYYY-MM` (UTC of the conversation's createdAt). */
   key: string;
-  /** Display label, e.g. "April 2026". */
+  /** Display label — same `YYYY-MM` form as the key, exposed as a separate field
+   *  so callers can render without poking at the structural id. */
   label: string;
   /** Conversations created in this month, sorted createdAt desc. Empty for greyed-out months. */
   conversations: ConversationSummary[];
 }
-
-const LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
 
 /**
  * Group conversation summaries into month buckets sorted most-recent first.
@@ -50,7 +45,7 @@ export function groupByMonth(summaries: ConversationSummary[]): MonthBucket[] {
   const buckets: MonthBucket[] = [];
   for (const key of monthRange(newest, oldest)) {
     const conversations = (byKey.get(key) ?? []).slice().sort(byCreatedAtDesc);
-    buckets.push({ key, label: labelFromKey(key), conversations });
+    buckets.push({ key, label: key, conversations });
   }
   return buckets;
 }
@@ -84,11 +79,6 @@ function parseKey(key: string): [number, number] {
 
 function formatKey(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, '0')}`;
-}
-
-function labelFromKey(key: string): string {
-  const [year, month] = parseKey(key);
-  return LABEL_FORMATTER.format(new Date(Date.UTC(year, month - 1, 1)));
 }
 
 function byCreatedAtDesc(a: ConversationSummary, b: ConversationSummary): number {

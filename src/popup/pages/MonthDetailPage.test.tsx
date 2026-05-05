@@ -11,7 +11,7 @@ function summary(id: string, title: string, createdISO: string): ConversationSum
 
 const BUCKET: MonthBucket = {
   key: '2026-04',
-  label: 'April 2026',
+  label: '2026-04',
   conversations: [
     summary('latest', 'Latest chat', '2026-04-28T00:00:00Z'),
     summary('mid', 'Middle chat', '2026-04-15T00:00:00Z'),
@@ -30,7 +30,7 @@ describe('MonthDetailPage', () => {
         onExport={vi.fn()}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'April 2026' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '2026-04' })).toBeTruthy();
     expect(screen.getByText('Latest chat')).toBeTruthy();
     expect(screen.getByText('Middle chat')).toBeTruthy();
   });

@@ -14,12 +14,12 @@ function bucket(key: string, label: string, conversations: ConversationSummary[]
 }
 
 const BUCKETS: MonthBucket[] = [
-  bucket('2026-04', 'April 2026', [
+  bucket('2026-04', '2026-04', [
     summary('a1', '2026-04-28T00:00:00Z'),
     summary('a2', '2026-04-15T00:00:00Z'),
   ]),
-  bucket('2026-03', 'March 2026', []),
-  bucket('2026-02', 'February 2026', [summary('b1', '2026-02-10T00:00:00Z')]),
+  bucket('2026-03', '2026-03', []),
+  bucket('2026-02', '2026-02', [summary('b1', '2026-02-10T00:00:00Z')]),
 ];
 
 describe('MonthListPage', () => {
@@ -34,9 +34,9 @@ describe('MonthListPage', () => {
         onBack={vi.fn()}
       />,
     );
-    expect(screen.getByText('April 2026')).toBeTruthy();
-    expect(screen.getByText('March 2026')).toBeTruthy();
-    expect(screen.getByText('February 2026')).toBeTruthy();
+    expect(screen.getByText('2026-04')).toBeTruthy();
+    expect(screen.getByText('2026-03')).toBeTruthy();
+    expect(screen.getByText('2026-02')).toBeTruthy();
     // April: 2, February: 1; March has no badge (empty).
     expect(screen.getByLabelText('2 total')).toBeTruthy();
     expect(screen.getByLabelText('1 total')).toBeTruthy();
@@ -53,7 +53,7 @@ describe('MonthListPage', () => {
         onBack={vi.fn()}
       />,
     );
-    const empty = screen.getByRole('button', { name: 'March 2026 (no conversations)' });
+    const empty = screen.getByRole('button', { name: '2026-03 (no conversations)' });
     expect((empty as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -69,7 +69,7 @@ describe('MonthListPage', () => {
         onBack={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Open April 2026/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Open 2026-04/ }));
     expect(onOpenMonth).toHaveBeenCalledWith('2026-04');
   });
 
@@ -85,7 +85,7 @@ describe('MonthListPage', () => {
         onBack={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'March 2026 (no conversations)' }));
+    fireEvent.click(screen.getByRole('button', { name: '2026-03 (no conversations)' }));
     expect(onOpenMonth).not.toHaveBeenCalled();
   });
 
@@ -100,9 +100,9 @@ describe('MonthListPage', () => {
         onBack={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText('1 selected in April 2026')).toBeTruthy();
+    expect(screen.getByLabelText('1 selected in 2026-04')).toBeTruthy();
     // February has no selections — no accent badge for that row.
-    expect(screen.queryByLabelText(/selected in February 2026/)).toBeNull();
+    expect(screen.queryByLabelText(/selected in 2026-02/)).toBeNull();
   });
 
   it('renders the footer total-selected badge and Export button only when ≥1 selected', () => {

@@ -66,11 +66,7 @@ test('saves a custom redact pattern and applies it to the next export', async ()
 
   // Run a real export and capture the ZIP.
   const created = new Date(fixture.create_time * 1000);
-  const monthLabel = new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(created);
+  const monthLabel = `${created.getUTCFullYear()}-${String(created.getUTCMonth() + 1).padStart(2, '0')}`;
   await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel}`) }).click();
   await ext.popup.getByLabel(`Select ${fixture.title}`).check();
   await installDownloadsCapture(ext.serviceWorker);

@@ -11,13 +11,8 @@ test.afterEach(async () => {
   await ext.cleanup();
 });
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
 function monthLabel(year: number, monthIndex: number): string {
-  return MONTH_FORMATTER.format(new Date(Date.UTC(year, monthIndex, 1)));
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
 }
 function unix(year: number, monthIndex: number, day: number): number {
   return Math.floor(Date.UTC(year, monthIndex, day) / 1000);
@@ -110,7 +105,9 @@ test('drills into a month, checks conversations, back-button preserves selection
   // Per-month accent badge shows the count selected within that month.
   await expect(ext.popup.getByLabel(`1 selected in ${monthLabel(2026, 3)}`)).toBeVisible();
   // February has none selected — no per-month accent badge for that row.
-  await expect(ext.popup.getByLabel(/selected in February 2026/)).toHaveCount(0);
+  await expect(ext.popup.getByLabel(new RegExp(`selected in ${monthLabel(2026, 1)}`))).toHaveCount(
+    0,
+  );
 
   // Drill into February, add another, back out — total now 2 across both months.
   await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel(2026, 1)}`) }).click();
