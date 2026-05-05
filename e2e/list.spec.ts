@@ -11,13 +11,8 @@ test.afterEach(async () => {
   await ext.cleanup();
 });
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
 function monthLabel(year: number, monthIndex: number): string {
-  return MONTH_FORMATTER.format(new Date(Date.UTC(year, monthIndex, 1)));
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
 }
 function unix(year: number, monthIndex: number, day: number): number {
   return Math.floor(Date.UTC(year, monthIndex, day) / 1000);

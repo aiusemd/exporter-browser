@@ -16,7 +16,7 @@ describe('groupByMonth', () => {
     const buckets = groupByMonth([summary('a', '2026-04-15T00:00:00Z')]);
     expect(buckets).toHaveLength(1);
     expect(buckets[0]?.key).toBe('2026-04');
-    expect(buckets[0]?.label).toBe('April 2026');
+    expect(buckets[0]?.label).toBe('2026-04');
     expect(buckets[0]?.conversations).toHaveLength(1);
   });
 
