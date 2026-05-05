@@ -1,6 +1,6 @@
 {
   "name": "exporter-browser",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Browser extension that exports ChatGPT/Claude conversations to AIUSE-spec markdown logs.",
