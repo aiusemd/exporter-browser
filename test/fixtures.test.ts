@@ -32,7 +32,7 @@ function loadFixtures(): Array<{ name: string; data: ChatGPTFixture }> {
 describe('test fixtures', () => {
   const fixtures = loadFixtures();
 
-  it('directory contains the 8 expected ChatGPT fixtures', () => {
+  it('directory contains the 9 expected ChatGPT fixtures', () => {
     const names = fixtures.map((f) => f.name).sort();
     expect(names).toEqual([
       'chatgpt-browsing.json',
@@ -43,6 +43,7 @@ describe('test fixtures', () => {
       'chatgpt-multimodal.json',
       'chatgpt-regen-tree.json',
       'chatgpt-simple.json',
+      'chatgpt-voice.json',
     ]);
   });
 

@@ -1,0 +1,378 @@
+{
+  "_comment": "Voice (advanced voice mode) conversation. User and assistant messages arrive as multimodal_text with audio_transcription parts (transcript text on .text) and audio_asset_pointer / real_time_user_audio_video_asset_pointer parts that point to expiring sediment:// blobs we don't package. The normalizer should emit the transcripts as plain text and ignore the audio pointers. Voice-mode system messages at the top of the tree are already filtered via is_visually_hidden_from_conversation.",
+  "title": "Help cat eat and calm",
+  "create_time": 1777578353.385718,
+  "update_time": 1777578373.612306,
+  "moderation_results": [],
+  "plugin_ids": null,
+  "conversation_id": "69f3b116-3c18-8396-86e3-fff67f76dce2",
+  "conversation_template_id": null,
+  "gizmo_id": null,
+  "gizmo_type": null,
+  "is_archived": false,
+  "is_starred": null,
+  "safe_urls": [],
+  "blocked_urls": [],
+  "default_model_slug": "auto",
+  "atlas_mode_enabled": null,
+  "conversation_origin": null,
+  "is_read_only": null,
+  "voice": "cove",
+  "async_status": null,
+  "disabled_tool_ids": [],
+  "is_temporary_chat": false,
+  "is_do_not_remember": false,
+  "memory_scope": "global_enabled",
+  "context_scopes": [],
+  "sugar_item_id": null,
+  "sugar_item_visible": false,
+  "pinned_time": null,
+  "is_study_mode": false,
+  "owner": null,
+  "mapping": {
+    "9b4b4443-5e26-464a-9a65-8c1d4d4ec937": {
+      "id": "9b4b4443-5e26-464a-9a65-8c1d4d4ec937",
+      "message": null,
+      "parent": null,
+      "children": ["690870b9-fbb6-4032-9d44-db2c0f968b05"]
+    },
+    "690870b9-fbb6-4032-9d44-db2c0f968b05": {
+      "id": "690870b9-fbb6-4032-9d44-db2c0f968b05",
+      "message": {
+        "id": "690870b9-fbb6-4032-9d44-db2c0f968b05",
+        "author": { "role": "system", "name": null, "metadata": {} },
+        "create_time": null,
+        "update_time": null,
+        "content": { "content_type": "text", "parts": [""] },
+        "status": "finished_successfully",
+        "end_turn": true,
+        "weight": 0,
+        "metadata": {
+          "voice_session_id": "F6301412-E688-4C9B-873D-409AD9E55198",
+          "is_visually_hidden_from_conversation": true,
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "9b4b4443-5e26-464a-9a65-8c1d4d4ec937",
+      "children": ["34b51441-f189-4aef-9961-eadae18a9c16"]
+    },
+    "34b51441-f189-4aef-9961-eadae18a9c16": {
+      "id": "34b51441-f189-4aef-9961-eadae18a9c16",
+      "message": {
+        "id": "34b51441-f189-4aef-9961-eadae18a9c16",
+        "author": { "role": "system", "name": null, "metadata": {} },
+        "create_time": null,
+        "update_time": null,
+        "content": { "content_type": "text", "parts": [""] },
+        "status": "finished_successfully",
+        "end_turn": true,
+        "weight": 0,
+        "metadata": {
+          "rebase_developer_message": true,
+          "is_visually_hidden_from_conversation": true,
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "690870b9-fbb6-4032-9d44-db2c0f968b05",
+      "children": ["c21ade54-17f2-4675-bec5-bfdca6d748c6"]
+    },
+    "c21ade54-17f2-4675-bec5-bfdca6d748c6": {
+      "id": "c21ade54-17f2-4675-bec5-bfdca6d748c6",
+      "message": {
+        "id": "c21ade54-17f2-4675-bec5-bfdca6d748c6",
+        "author": { "role": "system", "name": null, "metadata": {} },
+        "create_time": null,
+        "update_time": null,
+        "content": { "content_type": "text", "parts": [""] },
+        "status": "finished_successfully",
+        "end_turn": null,
+        "weight": 1,
+        "metadata": {
+          "is_contextual_answers_system_message": true,
+          "contextual_answers_message_type": "identity_prompt",
+          "is_visually_hidden_from_conversation": true,
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "34b51441-f189-4aef-9961-eadae18a9c16",
+      "children": ["8c029a5b-6715-4bc8-89bc-d9530de2dfb4"]
+    },
+    "8c029a5b-6715-4bc8-89bc-d9530de2dfb4": {
+      "id": "8c029a5b-6715-4bc8-89bc-d9530de2dfb4",
+      "message": {
+        "id": "8c029a5b-6715-4bc8-89bc-d9530de2dfb4",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1777578353.384321,
+        "update_time": null,
+        "content": {
+          "content_type": "multimodal_text",
+          "parts": [
+            {
+              "content_type": "audio_transcription",
+              "text": "All right, so my cat has got a cut on his foot that got infected. Took him to the vets. He's now been given like antibiotics and other medicine and painkillers and stuff. He's got a cone on his head to stop him from licking the cut on his foot, but he's kind of, he seems really like upset and he's not really eating. Is there anything we can do to help him eat or like there's the biggest issue, he's like, he's circling around, he's just walking around like the perimeter of the house, so he's not really, it's not, it's not something he normally does. He just keeps circling around the perimeter of the house. Is there anything you can suggest that we can do to help him?",
+              "direction": "in",
+              "decoding_id": null
+            },
+            {
+              "expiry_datetime": "2026-05-30T19:45:53.139605+00:00",
+              "content_type": "real_time_user_audio_video_asset_pointer",
+              "frames_asset_pointers": [],
+              "video_container_asset_pointer": null,
+              "audio_asset_pointer": {
+                "expiry_datetime": "2026-05-30T19:45:53.139605+00:00",
+                "content_type": "audio_asset_pointer",
+                "asset_pointer": "sediment://file_00000000978071fb8f7dcfa47c5cf3b0",
+                "size_bytes": 2103918,
+                "format": "wav",
+                "tool_audio_direction": null,
+                "metadata": {
+                  "start_timestamp": null,
+                  "end_timestamp": null,
+                  "pretokenized_vq": null,
+                  "interruptions": null,
+                  "original_audio_source": null,
+                  "transcription": null,
+                  "word_transcription": null,
+                  "start": 0,
+                  "end": 43.83
+                }
+              },
+              "audio_start_timestamp": 47.144934943004046
+            }
+          ]
+        },
+        "status": "finished_successfully",
+        "end_turn": null,
+        "weight": 1,
+        "metadata": {
+          "voice_mode_message": true,
+          "voice_session_id": "F6301412-E688-4C9B-873D-409AD9E55198",
+          "request_id": "e57c6891-1af6-4180-9ff8-cf06eceec508/18uf",
+          "message_source": null,
+          "turn_exchange_id": "e456f465-5cbf-4f8f-8150-b1dad13551ef",
+          "real_time_audio_has_video": false,
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "c21ade54-17f2-4675-bec5-bfdca6d748c6",
+      "children": ["1b3c6243-f696-4e5c-9214-d3e61c729ad1"]
+    },
+    "1b3c6243-f696-4e5c-9214-d3e61c729ad1": {
+      "id": "1b3c6243-f696-4e5c-9214-d3e61c729ad1",
+      "message": {
+        "id": "1b3c6243-f696-4e5c-9214-d3e61c729ad1",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1777578262.712138,
+        "update_time": null,
+        "content": {
+          "content_type": "model_editable_context",
+          "model_set_context": "",
+          "repository": null,
+          "repo_summary": null,
+          "structured_context": null
+        },
+        "status": "finished_successfully",
+        "end_turn": null,
+        "weight": 1,
+        "metadata": {
+          "voice_session_id": "F6301412-E688-4C9B-873D-409AD9E55198",
+          "parent_id": "8c029a5b-6715-4bc8-89bc-d9530de2dfb4",
+          "turn_exchange_id": "e456f465-5cbf-4f8f-8150-b1dad13551ef",
+          "model_switcher_deny": [],
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "8c029a5b-6715-4bc8-89bc-d9530de2dfb4",
+      "children": ["fb4f1473-ec41-447b-ba3b-2b3c21ee396b"]
+    },
+    "fb4f1473-ec41-447b-ba3b-2b3c21ee396b": {
+      "id": "fb4f1473-ec41-447b-ba3b-2b3c21ee396b",
+      "message": {
+        "id": "fb4f1473-ec41-447b-ba3b-2b3c21ee396b",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1777578353.737968,
+        "update_time": null,
+        "content": {
+          "content_type": "multimodal_text",
+          "parts": [
+            {
+              "content_type": "audio_transcription",
+              "text": "Poor little guy, it sounds like he’s going through a lot! First, on eating: you might tempt him with something especially appetising—like some warm, smelly food (maybe a bit of plain cooked chicken or fish) to encourage him. Keep offering small amounts regularly, and ensure he’s got water nearby, too.\n\nAs for the circling, it could be a reaction to discomfort or the disorientation from the cone. You can help by giving him a quiet, cosy space with fewer obstacles so he feels safer. If he’s still not eating or his behaviour gets more worrying, a follow-up call to the vet is wise. But a bit of patience, extra cuddles (if he’s in the mood), and some tasty offerings can often coax them back into routine.",
+              "direction": "out",
+              "decoding_id": null
+            },
+            {
+              "expiry_datetime": "2026-05-30T19:45:53.139752+00:00",
+              "content_type": "audio_asset_pointer",
+              "asset_pointer": "sediment://file_000000005e4471fb8b2e05ccf3c84dd5",
+              "size_bytes": 2016078,
+              "format": "wav",
+              "tool_audio_direction": null,
+              "metadata": {
+                "start_timestamp": null,
+                "end_timestamp": null,
+                "pretokenized_vq": null,
+                "interruptions": null,
+                "original_audio_source": null,
+                "transcription": null,
+                "word_transcription": null,
+                "start": 0,
+                "end": 42
+              }
+            }
+          ]
+        },
+        "status": "finished_successfully",
+        "end_turn": true,
+        "weight": 1,
+        "metadata": {
+          "citations": [],
+          "content_references": [],
+          "resolved_model_slug": "gpt-4o",
+          "finish_details": { "type": "stop", "stop_tokens": [200002] },
+          "is_complete": true,
+          "voice_session_id": "F6301412-E688-4C9B-873D-409AD9E55198",
+          "parent_id": "1b3c6243-f696-4e5c-9214-d3e61c729ad1",
+          "turn_exchange_id": "e456f465-5cbf-4f8f-8150-b1dad13551ef",
+          "model_switcher_deny": [],
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "1b3c6243-f696-4e5c-9214-d3e61c729ad1",
+      "children": ["1d424c82-53bf-4feb-a4fe-a85ea51f9002"]
+    },
+    "1d424c82-53bf-4feb-a4fe-a85ea51f9002": {
+      "id": "1d424c82-53bf-4feb-a4fe-a85ea51f9002",
+      "message": {
+        "id": "1d424c82-53bf-4feb-a4fe-a85ea51f9002",
+        "author": { "role": "user", "name": null, "metadata": {} },
+        "create_time": 1777578372.681838,
+        "update_time": null,
+        "content": {
+          "content_type": "multimodal_text",
+          "parts": [
+            {
+              "content_type": "audio_transcription",
+              "text": "What can I do? What can we do? Nothing.",
+              "direction": "in",
+              "decoding_id": null
+            },
+            {
+              "expiry_datetime": "2026-05-30T19:46:12.553507+00:00",
+              "content_type": "real_time_user_audio_video_asset_pointer",
+              "frames_asset_pointers": [],
+              "video_container_asset_pointer": null,
+              "audio_asset_pointer": {
+                "expiry_datetime": "2026-05-30T19:46:12.553507+00:00",
+                "content_type": "audio_asset_pointer",
+                "asset_pointer": "sediment://file_00000000666071fbbd14ade7b3bdcfea",
+                "size_bytes": 120558,
+                "format": "wav",
+                "tool_audio_direction": null,
+                "metadata": {
+                  "start_timestamp": null,
+                  "end_timestamp": null,
+                  "pretokenized_vq": null,
+                  "interruptions": null,
+                  "original_audio_source": null,
+                  "transcription": null,
+                  "word_transcription": null,
+                  "start": 0,
+                  "end": 2.51
+                }
+              },
+              "audio_start_timestamp": 95.38314269197872
+            }
+          ]
+        },
+        "status": "finished_successfully",
+        "end_turn": null,
+        "weight": 1,
+        "metadata": {
+          "voice_mode_message": true,
+          "voice_session_id": "F6301412-E688-4C9B-873D-409AD9E55198",
+          "request_id": "e57c6891-1af6-4180-9ff8-cf06eceec508/6x22",
+          "message_source": null,
+          "turn_exchange_id": "bb04f649-356e-4c08-8453-55e15e441992",
+          "real_time_audio_has_video": false,
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "fb4f1473-ec41-447b-ba3b-2b3c21ee396b",
+      "children": ["03e343b3-1faa-4a7b-a262-7e18648aeffa"]
+    },
+    "03e343b3-1faa-4a7b-a262-7e18648aeffa": {
+      "id": "03e343b3-1faa-4a7b-a262-7e18648aeffa",
+      "message": {
+        "id": "03e343b3-1faa-4a7b-a262-7e18648aeffa",
+        "author": { "role": "assistant", "name": null, "metadata": {} },
+        "create_time": 1777578372.883267,
+        "update_time": null,
+        "content": {
+          "content_type": "multimodal_text",
+          "parts": [
+            {
+              "content_type": "audio_transcription",
+              "text": "It’s understandable to feel a bit helpless when a pet isn’t acting themselves, but your care makes a difference. Keep things calm and consistent. You can sit quietly with him—just your presence might reassure him. If he’s pacing, gently guide him toward a familiar, safe spot. If he likes",
+              "direction": "out",
+              "decoding_id": null
+            },
+            {
+              "expiry_datetime": "2026-05-30T19:46:12.553569+00:00",
+              "content_type": "audio_asset_pointer",
+              "asset_pointer": "sediment://file_00000000164c71fb96eeff3ab90350f9",
+              "size_bytes": 636078,
+              "format": "wav",
+              "tool_audio_direction": null,
+              "metadata": {
+                "start_timestamp": null,
+                "end_timestamp": null,
+                "pretokenized_vq": null,
+                "interruptions": null,
+                "original_audio_source": null,
+                "transcription": null,
+                "word_transcription": null,
+                "start": 0,
+                "end": 13.25
+              }
+            }
+          ]
+        },
+        "status": "finished_successfully",
+        "end_turn": true,
+        "weight": 1,
+        "metadata": {
+          "citations": [],
+          "content_references": [],
+          "resolved_model_slug": "gpt-4o",
+          "finish_details": { "type": "stop", "stop_tokens": [200002] },
+          "is_complete": true,
+          "voice_session_id": "F6301412-E688-4C9B-873D-409AD9E55198",
+          "parent_id": "1d424c82-53bf-4feb-a4fe-a85ea51f9002",
+          "turn_exchange_id": "bb04f649-356e-4c08-8453-55e15e441992",
+          "model_switcher_deny": [],
+          "can_save": false
+        },
+        "recipient": "all",
+        "channel": null
+      },
+      "parent": "1d424c82-53bf-4feb-a4fe-a85ea51f9002",
+      "children": []
+    }
+  },
+  "current_node": "03e343b3-1faa-4a7b-a262-7e18648aeffa"
+}

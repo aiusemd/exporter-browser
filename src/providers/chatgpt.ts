@@ -50,7 +50,11 @@ interface ChatGPTContent {
   text?: string;
 }
 
-type ChatGPTPart = string | ChatGPTImageAssetPointer;
+type ChatGPTPart =
+  | string
+  | ChatGPTImageAssetPointer
+  | ChatGPTAudioTranscription
+  | ChatGPTAudioAssetPart;
 
 interface ChatGPTImageAssetPointer {
   content_type: 'image_asset_pointer';
@@ -58,6 +62,18 @@ interface ChatGPTImageAssetPointer {
   size_bytes?: number | null;
   width?: number;
   height?: number;
+}
+
+interface ChatGPTAudioTranscription {
+  content_type: 'audio_transcription';
+  text: string;
+}
+
+// Voice-mode messages also carry audio (and combined audio+video) asset
+// pointers next to the transcription. The sediment:// URLs expire, and we
+// don't package binaries, so these parts are recognised but not rendered.
+interface ChatGPTAudioAssetPart {
+  content_type: 'audio_asset_pointer' | 'real_time_user_audio_video_asset_pointer';
 }
 
 interface ChatGPTMessageMetadata {
@@ -226,6 +242,8 @@ function appendResultBlocks(
         const ref = imageAssetToAttachment(part, attachmentMeta);
         attachments.push(ref);
         blocks.push({ type: 'image', ref });
+      } else if (part.content_type === 'audio_transcription') {
+        if (part.text.length > 0) blocks.push({ type: 'text', text: part.text });
       }
     }
     return;
@@ -269,6 +287,8 @@ function userMessage(msg: ChatGPTMessage): NormalizedMessage | null {
         const ref = imageAssetToAttachment(part, attachmentMeta);
         attachments.push(ref);
         content.push({ type: 'image', ref });
+      } else if (part.content_type === 'audio_transcription') {
+        if (part.text.length > 0) content.push({ type: 'text', text: part.text });
       }
     }
   } else if (msg.content.content_type === 'text') {
@@ -302,8 +322,10 @@ function assistantMessage(msg: ChatGPTMessage): NormalizedMessage | null {
     });
   } else if (msg.content.content_type === 'multimodal_text') {
     for (const part of msg.content.parts ?? []) {
-      if (typeof part === 'string' && part.length > 0) {
-        content.push({ type: 'text', text: part });
+      if (typeof part === 'string') {
+        if (part.length > 0) content.push({ type: 'text', text: part });
+      } else if (part.content_type === 'audio_transcription') {
+        if (part.text.length > 0) content.push({ type: 'text', text: part.text });
       }
     }
   }
