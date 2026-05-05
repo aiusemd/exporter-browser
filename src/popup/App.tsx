@@ -83,18 +83,54 @@ export function App() {
             return prev;
           });
         },
-        onError: (message) => setView({ kind: 'error', message }),
+        onError: (message) => {
+          // The provider clients throw "Not authenticated with <provider>"
+          // when a saved session expires mid-list — that's the rare-case
+          // re-prompt path. The user starts logged-in on the conversation
+          // list, the SW hits a 401 it can't refresh, and we surface the
+          // login flow rather than a generic "Something went wrong".
+          if (isAuthError(message)) {
+            setView({ kind: 'auth-prompt' });
+            return;
+          }
+          setView({ kind: 'error', message });
+        },
       });
     },
     [cleanupStream],
   );
+
+  /**
+   * Refresh the auth status reflected on the provider-select page.
+   * Called on initial mount (when there's no saved provider) and on every
+   * navigation back from the conversation list. Chrome action popups close
+   * on blur, so a fresh popup open re-runs the boot effect — no further
+   * polling is needed in this surface.
+   */
+  const refreshSelectStatus = useCallback(async (provider: ProviderName) => {
+    try {
+      const session = await dispatch.getSession(provider);
+      setView((prev) =>
+        prev.kind === 'select' ? { ...prev, sessionAuthenticated: session.authenticated } : prev,
+      );
+    } catch (err) {
+      // Network or messaging error — leave the badge indeterminate rather
+      // than crashing the page, but log with context so the failure surfaces
+      // in devtools instead of being silently dropped.
+      console.warn('[aiuse] refreshSelectStatus failed', err);
+      setView((prev) => (prev.kind === 'select' ? { ...prev, sessionAuthenticated: null } : prev));
+    }
+  }, []);
 
   const routeAfterSession = useCallback(
     async (provider: ProviderName) => {
       try {
         const session = await dispatch.getSession(provider);
         if (!session.authenticated) {
-          setView({ kind: 'auth-prompt' });
+          // Don't show AuthPromptPage on the boot path — bounce back to
+          // provider-select with the "Login needed" badge so the user has
+          // a single, predictable surface for re-auth.
+          setView({ kind: 'select', sessionAuthenticated: false });
           return;
         }
         startStream(provider);
@@ -113,7 +149,10 @@ export function App() {
         if (cancelled) return;
         setSettings(loaded);
         if (last === null) {
+          // No saved provider — show the select page and kick off a probe
+          // so the badge resolves from "checking" to its real state.
           setView({ kind: 'select', sessionAuthenticated: null });
+          await refreshSelectStatus('chatgpt');
           return;
         }
         await routeAfterSession(last);
@@ -127,7 +166,7 @@ export function App() {
       cleanupStream();
       cleanupExport();
     };
-  }, [routeAfterSession, cleanupStream, cleanupExport]);
+  }, [routeAfterSession, refreshSelectStatus, cleanupStream, cleanupExport]);
 
   const handleSelectProvider = useCallback(
     async (provider: ProviderName) => {
@@ -156,15 +195,21 @@ export function App() {
 
   /**
    * Walk back from the conversation list to the provider picker. Cancels any
-   * in-flight stream, drops the selection, and resets the drilled-in month
-   * so re-entering a provider doesn't surface stale state.
+   * in-flight stream, drops the selection, resets the drilled-in month so
+   * re-entering a provider doesn't surface stale state, and re-checks the
+   * session — by the time the user returns here, their cookie may have
+   * expired (or they may have signed out in another tab).
    */
-  const handleBackToProviderSelect = useCallback(() => {
-    cleanupStream();
-    setSelectedIds(new Set());
-    setOpenMonth(null);
-    setView({ kind: 'select', sessionAuthenticated: true });
-  }, [cleanupStream]);
+  const handleBackToProviderSelect = useCallback(
+    (provider: ProviderName) => {
+      cleanupStream();
+      setSelectedIds(new Set());
+      setOpenMonth(null);
+      setView({ kind: 'select', sessionAuthenticated: null });
+      void refreshSelectStatus(provider);
+    },
+    [cleanupStream, refreshSelectStatus],
+  );
 
   const handleExport = useCallback(() => {
     if (view.kind !== 'list') return;
@@ -266,6 +311,7 @@ export function App() {
     return <SettingsPage initial={settings} onClose={handleSettingsClose} />;
   }
   if (view.kind === 'list') {
+    const provider = view.provider;
     return (
       <>
         <ListShell
@@ -275,7 +321,7 @@ export function App() {
           selectedIds={selectedIds}
           onOpenMonth={handleOpenMonth}
           onBack={handleBack}
-          onBackToProviders={handleBackToProviderSelect}
+          onBackToProviders={() => handleBackToProviderSelect(provider)}
           onToggle={handleToggleSelected}
           onExport={handleExport}
         />
@@ -388,4 +434,11 @@ function ErrorView({ message }: { message: string }) {
 function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   return String(err);
+}
+
+// String-prefix detection because the SW envelope only carries a message —
+// providers throw `Not authenticated with <provider>` when a refresh fails.
+// If we add more providers we may want to elevate this to a typed error code.
+function isAuthError(message: string): boolean {
+  return message.startsWith('Not authenticated');
 }
