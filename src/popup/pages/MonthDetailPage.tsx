@@ -73,6 +73,8 @@ interface ConversationRowProps {
   onToggle: (id: string) => void;
 }
 
+const CHATGPT_CONVERSATION_BASE = 'https://chatgpt.com/c/';
+
 function ConversationRow({ id, title, createdAt, checked, onToggle }: ConversationRowProps) {
   const handleChange = useCallback(() => {
     onToggle(id);
@@ -87,9 +89,15 @@ function ConversationRow({ id, title, createdAt, checked, onToggle }: Conversati
         aria-label={`Select ${title}`}
         class="h-4 w-4 shrink-0 rounded border-gh-border-default accent-gh-accent-emphasis"
       />
-      <span class="flex-1 truncate text-sm text-gh-fg-default" title={title}>
+      <a
+        href={`${CHATGPT_CONVERSATION_BASE}${encodeURIComponent(id)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={title}
+        class="flex-1 truncate text-sm text-gh-fg-default hover:text-gh-accent-fg hover:underline focus:outline-none focus:ring-2 focus:ring-gh-accent-emphasis focus:ring-offset-1"
+      >
         {title}
-      </span>
+      </a>
       <span class="shrink-0 text-xs text-gh-fg-muted">{formatDate(createdAt)}</span>
     </li>
   );
