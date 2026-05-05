@@ -67,6 +67,23 @@ describe('MonthDetailPage', () => {
     expect(onToggle).toHaveBeenCalledWith('mid');
   });
 
+  it('links each conversation title to chatgpt.com/c/<id> in a new tab', () => {
+    render(
+      <MonthDetailPage
+        bucket={BUCKET}
+        loading={false}
+        selectedIds={new Set()}
+        onBack={vi.fn()}
+        onToggle={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+    const link = screen.getByRole('link', { name: 'Latest chat' }) as HTMLAnchorElement;
+    expect(link.href).toBe('https://chatgpt.com/c/latest');
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener noreferrer');
+  });
+
   it('reflects checked state from selectedIds', () => {
     render(
       <MonthDetailPage
