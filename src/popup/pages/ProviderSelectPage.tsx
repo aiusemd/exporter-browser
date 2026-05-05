@@ -47,8 +47,8 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
         >
           <img src={openaiLogoUrl} alt="" class="h-8 w-8 shrink-0" />
           <div class="flex min-w-0 flex-1 flex-col">
-            <span class="text-base font-medium text-gh-fg-default">OpenAI</span>
-            <span class="text-xs text-gh-fg-muted">ChatGPT</span>
+            <span class="text-base font-medium text-gh-fg-default">ChatGPT</span>
+            <span class="text-xs text-gh-fg-muted">OpenAI</span>
           </div>
           <span
             aria-label={statusLabel(sessionAuthenticated)}
@@ -63,8 +63,8 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
         >
           <img src={anthropicLogoUrl} alt="" class="h-8 w-8 shrink-0" />
           <div class="flex min-w-0 flex-1 flex-col">
-            <span class="text-base font-medium text-gh-fg-default">Anthropic</span>
-            <span class="text-xs text-gh-fg-muted">Claude</span>
+            <span class="text-base font-medium text-gh-fg-default">Claude</span>
+            <span class="text-xs text-gh-fg-muted">Anthropic</span>
           </div>
           <span class="shrink-0 rounded-full bg-gh-canvas-default px-2 py-0.5 text-xs font-medium text-gh-fg-muted ring-1 ring-inset ring-gh-border-default">
             Coming soon
