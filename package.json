@@ -1,6 +1,6 @@
 {
   "name": "exporter-browser",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Browser extension that exports ChatGPT/Claude conversations to AIUSE-spec markdown logs.",
@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "package": "node scripts/package.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

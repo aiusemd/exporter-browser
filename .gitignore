@@ -3,6 +3,10 @@ dist/
 build/
 .DS_Store
 
+# packaging output
+aiuse-exporter-*.zip
+screenshots/
+
 # editor
 .vscode/
 .idea/
