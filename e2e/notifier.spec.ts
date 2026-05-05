@@ -53,11 +53,7 @@ test('fires a success notification with filename in the body after a normal expo
   await ext.popup.reload();
   await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
   const created = new Date(fixture.create_time * 1000);
-  const monthLabel = new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(created);
+  const monthLabel = `${created.getUTCFullYear()}-${String(created.getUTCMonth() + 1).padStart(2, '0')}`;
   await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel}`) }).click();
   await ext.popup.getByLabel(`Select ${fixture.title}`).check();
 
@@ -114,11 +110,7 @@ test('reports failed-conversation count in the success notification when one fet
   await ext.popup.reload();
   await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
   const created = new Date(fixture.create_time * 1000);
-  const monthLabel = new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(created);
+  const monthLabel = `${created.getUTCFullYear()}-${String(created.getUTCMonth() + 1).padStart(2, '0')}`;
   await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel}`) }).click();
   await ext.popup.getByLabel(`Select ${fixture.title}`).check();
   await ext.popup.getByLabel('Select Missing fixture').check();

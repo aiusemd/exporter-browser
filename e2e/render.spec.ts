@@ -84,11 +84,7 @@ for (const { file, exercises } of FIXTURES) {
     await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
 
     const created = new Date(fixture.create_time * 1000);
-    const monthLabel = new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(created);
+    const monthLabel = `${created.getUTCFullYear()}-${String(created.getUTCMonth() + 1).padStart(2, '0')}`;
     await ext.popup.getByRole('button', { name: new RegExp(`Open ${monthLabel}`) }).click();
     await ext.popup.getByLabel(`Select ${fixture.title}`).check();
     // Install the download capture stub immediately before the click so the
