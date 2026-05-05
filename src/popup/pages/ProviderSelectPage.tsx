@@ -10,24 +10,22 @@ export interface ProviderSelectPageProps {
   onSelect: (provider: ProviderName) => void;
 }
 
-function statusDotClass(authed: boolean | null): string {
-  if (authed === true) return 'bg-gh-success-emphasis';
-  if (authed === false) return 'bg-[#bf8700]';
-  return 'bg-gh-border-default';
-}
-
-function statusLabel(authed: boolean | null): string {
-  if (authed === true) return 'Logged in';
-  if (authed === false) return 'Not logged in';
-  return 'Status unknown';
-}
+const CHATGPT_URL = 'https://chatgpt.com';
 
 export function ProviderSelectPage(props: ProviderSelectPageProps) {
   const { sessionAuthenticated, onSelect } = props;
 
   const handleSelectChatGPT = useCallback(() => {
+    // Unauthenticated: opening the provider's site in a new tab is the
+    // most direct path to login. The popup will close as it loses focus;
+    // when the user reopens it after logging in, the boot-time session
+    // check will surface the now-authed state.
+    if (sessionAuthenticated === false) {
+      chrome.tabs.create({ url: CHATGPT_URL });
+      return;
+    }
     onSelect('chatgpt');
-  }, [onSelect]);
+  }, [sessionAuthenticated, onSelect]);
 
   return (
     <main class="flex h-full flex-col gap-4 p-6">
@@ -50,11 +48,7 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
             <span class="text-base font-medium text-gh-fg-default">ChatGPT</span>
             <span class="text-xs text-gh-fg-muted">OpenAI</span>
           </div>
-          <span
-            aria-label={statusLabel(sessionAuthenticated)}
-            title={statusLabel(sessionAuthenticated)}
-            class={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDotClass(sessionAuthenticated)}`}
-          />
+          <StatusBadge authed={sessionAuthenticated} />
         </button>
 
         <div
@@ -72,5 +66,25 @@ export function ProviderSelectPage(props: ProviderSelectPageProps) {
         </div>
       </div>
     </main>
+  );
+}
+
+function StatusBadge({ authed }: { authed: boolean | null }) {
+  // While the auth check is in flight, render nothing rather than flashing
+  // a "Login needed" badge that resolves to "Available" a moment later.
+  if (authed === null) return null;
+
+  const isAuthed = authed === true;
+  const label = isAuthed ? 'Available' : 'Login needed';
+  const palette = isAuthed
+    ? 'bg-gh-success-subtle text-gh-success-fg ring-gh-success-emphasis'
+    : 'bg-gh-canvas-subtle text-gh-fg-muted ring-gh-border-default';
+  return (
+    <span
+      aria-label={label}
+      class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${palette}`}
+    >
+      {label}
+    </span>
   );
 }
