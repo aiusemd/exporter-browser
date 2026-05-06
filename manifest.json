@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AIUSE.md Exporter",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Export ChatGPT conversation logs to AIUSE.md Markdown spec. Runs entirely client-side.",
   "host_permissions": ["https://chatgpt.com/*"],
   "permissions": ["downloads", "notifications", "storage"],
