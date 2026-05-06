@@ -11,16 +11,40 @@ test.afterEach(async () => {
   await ext.cleanup();
 });
 
-test('routes to the auth prompt when /api/auth/session is empty', async () => {
+test('shows "Login needed" badge and opens chatgpt.com when the unauthenticated ChatGPT tile is clicked', async () => {
   await installChatGPTMocks(ext.context, { session: null });
 
   // Reload the popup so the mocks intercept the very first session check.
   // The first popup load happens during launchExtension before mocks are set.
   await ext.popup.reload();
 
-  const card = ext.popup.getByRole('button', { name: /chatgpt/i });
-  await card.click();
+  // Once the boot-path probe resolves, the badge reflects "Login needed"
+  // (replacing the old AuthPromptPage detour).
+  await expect(ext.popup.getByLabel('Login needed')).toBeVisible();
 
-  await expect(ext.popup.getByRole('heading', { name: /log in to chatgpt/i })).toBeVisible();
-  await expect(ext.popup.getByRole('button', { name: /open chatgpt\.com/i })).toBeVisible();
+  // Stub chrome.tabs.create in the popup so we can assert the URL the click
+  // would have opened without actually launching a new tab. Mirrors the
+  // pattern used by ProviderSelectPage's unit tests.
+  await ext.popup.evaluate(() => {
+    const w = window as unknown as {
+      __aiuseOpenedUrl?: string;
+      chrome: { tabs: { create: (info: { url: string }) => Promise<unknown> } };
+    };
+    w.__aiuseOpenedUrl = undefined;
+    w.chrome.tabs.create = async ({ url }: { url: string }) => {
+      w.__aiuseOpenedUrl = url;
+      return { id: 1 };
+    };
+  });
+
+  await ext.popup.getByRole('button', { name: /chatgpt/i }).click();
+
+  const opened = await ext.popup.evaluate(() => {
+    const w = window as unknown as { __aiuseOpenedUrl?: string };
+    return w.__aiuseOpenedUrl;
+  });
+  expect(opened).toBe('https://chatgpt.com');
+
+  // Popup stays on the provider-select view — no AuthPromptPage detour.
+  await expect(ext.popup.getByRole('heading', { name: /choose a provider/i })).toBeVisible();
 });
