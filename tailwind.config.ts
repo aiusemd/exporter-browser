@@ -21,6 +21,7 @@ export default {
           'accent-subtle': '#ddf4ff',
           'success-fg': '#1a7f37',
           'success-emphasis': '#1f883d',
+          'success-subtle': '#dafbe1',
           'danger-fg': '#d1242f',
           'danger-emphasis': '#cf222e',
           'neutral-emphasis': '#59636e',
